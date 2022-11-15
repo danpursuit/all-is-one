@@ -1,0 +1,1 @@
+export const IMG2IMG = 'IMG2IMG';

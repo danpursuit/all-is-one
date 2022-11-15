@@ -1,3 +1,10 @@
+server/test.png
+
+# server/static
+client/build
+client/node_modules
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
