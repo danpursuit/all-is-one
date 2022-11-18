@@ -6,6 +6,7 @@ import { Link, TextField, FormControl, Slider, Button } from '@mui/material';
 import ProTip from './components/ProTip';
 import { WebSocketContext } from './WebSocket';
 import ImageUpload from './components/ImageUpload';
+import Txt2ImgInterface from './interfaces/Txt2ImgInterface';
 
 function Copyright() {
   return (
@@ -32,8 +33,8 @@ export default function App() {
     ws.ping({ steps });
   }
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ my: 4 }}>
+    <Container>
+      {/* <Box sx={{ my: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Create React App example
         </Typography>
@@ -42,7 +43,8 @@ export default function App() {
         <ImageUpload />
         <ProTip />
         <Copyright />
-      </Box>
+      </Box> */}
+      <Txt2ImgInterface />
     </Container>
   );
 }

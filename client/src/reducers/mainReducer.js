@@ -1,5 +1,7 @@
 import { IMG_UPLOAD, IMG_RESULT } from "../constants/actionTypes";
 import { IMG2IMG } from "../constants/features";
+// import blank.png
+import blank from "../images/blank.png";
 
 const initialState = {
     uploads: {
@@ -8,6 +10,10 @@ const initialState = {
     results: {
         [IMG2IMG]: null
     },
+    blanks: {
+        image: blank
+    },
+    panel: 0,
     history: []
 }
 export default (state = initialState, action) => {
