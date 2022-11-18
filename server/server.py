@@ -1,18 +1,18 @@
+import sys
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
-# image
-import io
-import base64
-from PIL import Image
+import opts
+from processors.txt2img import process_txt2img
+from processors.img2img import process_img2img
+from scripts.utils import pil_to_bytes
 
 app = Flask(__name__, static_url_path='')
 CORS(app, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
-# When someone goes to / on the server, execute the following function
 @app.route('/')
 def home():
     return app.send_static_file('index.html')
@@ -28,18 +28,13 @@ def handle_ping(data):
 
 @socketio.on("img2img")
 def handle_img2img(data):
-    img = Image.open(io.BytesIO(base64.b64decode(
-        data['img'].split(';')[1].split(',')[1])))
-    # flip image
-    img = img.transpose(Image.FLIP_LEFT_RIGHT)
-    # encode image to bytes
-    with io.BytesIO() as output:
-        img.save(output, format="PNG")
-        contents = output.getvalue()
+    opts.update_opts(opts.img2img_opts, data)
+    # real processing
+    output = process_img2img()
     # encode bytes to base64
-    emit("img2imgResult", {'img': base64.b64encode(contents).decode('utf-8')})
+    for img in output:
+        emit("img2imgResult", {'img': pil_to_bytes(img)})
 
 
-# If the script that was run is this script (we have not been imported)
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5050)  # Start the server
+    socketio.run(app, debug=True, port=5050)

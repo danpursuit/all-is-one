@@ -1,5 +1,9 @@
 server/test.png
 .DS_Store
+server/repositories/
+*.ckpt
+cache/
+src/
 
 # server/static
 client/build
