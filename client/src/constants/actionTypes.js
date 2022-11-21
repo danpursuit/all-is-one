@@ -7,3 +7,7 @@ export const SET_BATCH_OPTION = 'SET_BATCH_OPTION';
 
 export const UNDO = 'UNDO';
 export const REDO = 'REDO';
+
+// galleries
+export const ADD_IMAGE = 'ADD_IMAGE';
+export const SET_CURRENT_IMAGE = 'SET_CURRENT_IMAGE';

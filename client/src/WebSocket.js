@@ -3,7 +3,7 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import io from 'socket.io-client';
-import { IMG_RESULT } from './constants/actionTypes';
+import { IMG_RESULT, ADD_IMAGE } from './constants/actionTypes';
 import baseURL from './constants/url';
 import { txt2imgNames, txt2imgOpts } from './constants/options';
 
@@ -98,3 +98,4 @@ export default ({ children }) => {
             </WebSocketContext.Provider>
         )
     }
+}

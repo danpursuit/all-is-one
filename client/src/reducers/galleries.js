@@ -1,3 +1,5 @@
+import { ADD_IMAGE, SET_CURRENT_IMAGE } from "../constants/actionTypes";
+
 const ops = ['txt2img', 'img2img']
 const galleryTemplate = {
     op: '',
