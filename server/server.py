@@ -29,6 +29,7 @@ def handle_ping(data):
     emit("pong", data)
     print("client has connected")
 
+
 def create_output_callback(op):
     def output_callback(img, meta, idx):
         img_bytes = pil_to_bytes(img)
@@ -38,11 +39,12 @@ def create_output_callback(op):
 
 @socketio.on("txt2imgProcedural")
 def handle_txt2imgProcedural(data):
+    print('got txt2imgProcedural', data)
     options = data['options']
     keys = list(options.keys())
     for x in itertools.product(*[options[k] for k in keys]):
         overrides = dict(zip(keys, x))
-        print(overrides)
+        print('generating', overrides)
         process_txt2img(overrides, create_output_callback('txt2img'))
 
 

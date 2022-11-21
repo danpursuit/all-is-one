@@ -28,11 +28,13 @@ export default ({ children }) => {
         const opts = {};
         txt2imgNames.forEach((name, i) => opts[name] = [options[txt2imgOpts[name]].values[options[txt2imgOpts[name]].idx]]);
         console.log('opts', opts);
+        socket.emit('txt2imgProcedural', { options: opts });
     }
     const submitTxt2ImgProcedural = ({ options }) => {
         const opts = {};
         txt2imgNames.forEach((name, i) => opts[name] = options[txt2imgOpts[name]].values);
         console.log('opts', opts);
+        socket.emit('txt2imgProcedural', { options: opts });
     }
     const saveImage = ({ img, metadata }) => {
         const folder = `output/${metadata.op}`

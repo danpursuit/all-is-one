@@ -73,7 +73,9 @@ const Txt2ImgInterface = () => {
           <Button variant="contained"
             onClick={() => ws.submitTxt2ImgQuick({ options })}
           > Quick Submit {info && `(${info.num_quick_images} Image${info.num_quick_images > 1 ? 's' : ''})`}</Button>
-          <Button variant="contained"> Procedural Submit {info && `(${info.num_procedural_batches} Config${info.num_procedural_batches > 1 ? 's' : ''}, ${info.num_procedural_images} Image${info.num_procedural_images > 1 ? 's' : ''})`} </Button>
+          <Button variant="contained"
+            onClick={() => ws.submitTxt2ImgProcedural({ options })}
+          > Procedural Submit {info && `(${info.num_procedural_batches} Config${info.num_procedural_batches > 1 ? 's' : ''}, ${info.num_procedural_images} Image${info.num_procedural_images > 1 ? 's' : ''})`} </Button>
           <Stack direction="row" spacing={2}>
             <Button variant="contained"> Load Settings </Button>
             <Button variant="contained"> Clear </Button>
