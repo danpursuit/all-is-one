@@ -44,46 +44,51 @@ export default ({ children }) => {
     }
     if (!socket) {
         console.log('connecting');
-        // socket = null;
-        socket = io.connect(baseURL);
-        // clear localUpdate on disconnect
-        socket.on('disconnect', () => {
-            console.log('disconnected?');
-            if (localUpdate) {
-                clearInterval(localUpdate);
-            }
-        })
-
-        socket.on("init", (msg) => {
-            console.log('init:', msg);
-        })
-        socket.on("pong", (msg) => {
-            console.log('pong:', msg);
-        })
-        socket.on("img2imgResult", ({ img, metadata }) => {
-            dispatch({ type: IMG_RESULT, payload: 'data:image/png;base64,' + img });
-        })
-        socket.on("txt2imgResult", ({ img, meta, idx }) => {
-            dispatch({
-                type: ADD_IMAGE,
-                payload: {
-                    imgData: {
-                        img: 'data:image/png;base64,' + img,
-                        ...meta
-                    },
-                    op: meta.context,
-                    idx,
-                    numImages: idx + 1
+        const clientOnly = true;
+        if (clientOnly) {
+            socket = null;
+        } else {
+            // socket = null;
+            socket = io.connect(baseURL);
+            // clear localUpdate on disconnect
+            socket.on('disconnect', () => {
+                console.log('disconnected?');
+                if (localUpdate) {
+                    clearInterval(localUpdate);
                 }
             })
-        })
-        // //generic
-        // socket.on('fail', (msg) => {
-        //     console.log('fail from server', msg);
-        // })
-        // socket.on('success', (msg) => {
-        //     console.log('success from server', msg);
-        // })
+
+            socket.on("init", (msg) => {
+                console.log('init:', msg);
+            })
+            socket.on("pong", (msg) => {
+                console.log('pong:', msg);
+            })
+            socket.on("img2imgResult", ({ img, metadata }) => {
+                dispatch({ type: IMG_RESULT, payload: 'data:image/png;base64,' + img });
+            })
+            socket.on("txt2imgResult", ({ img, meta, idx }) => {
+                dispatch({
+                    type: ADD_IMAGE,
+                    payload: {
+                        imgData: {
+                            img: 'data:image/png;base64,' + img,
+                            ...meta
+                        },
+                        op: meta.context,
+                        idx,
+                        numImages: idx + 1
+                    }
+                })
+            })
+            // //generic
+            // socket.on('fail', (msg) => {
+            //     console.log('fail from server', msg);
+            // })
+            // socket.on('success', (msg) => {
+            //     console.log('success from server', msg);
+            // })
+        }
 
 
         ws = {

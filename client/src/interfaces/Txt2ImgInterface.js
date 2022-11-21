@@ -14,12 +14,13 @@ import BatchOptionSelect from '../components/BatchOptionSelect';
 import schedulers from '../constants/schedulers';
 import { WebSocketContext } from '../WebSocket';
 import { txt2imgOpts } from '../constants/options';
+import Gallery from '../components/Gallery';
 
 const optNames = txt2imgOpts;
+const op = 'txt2img';
 const Txt2ImgInterface = () => {
   const dispatch = useDispatch();
   const ws = React.useContext(WebSocketContext);
-  const blankImg = useSelector(state => state.main.blanks.image);
   const history = useSelector(state => state.main.history);
   const historyIndex = useSelector(state => state.main.historyIndex);
   const options = useSelector(state => state.main.options);
@@ -67,9 +68,7 @@ const Txt2ImgInterface = () => {
       </Grid>
       <Grid item xs={12} md={6}>
         <Stack spacing={2}>
-          <Card>
-            <img src={blankImg} style={{ width: '100%', objectFit: 'contain', maxHeight: '400px' }} />
-          </Card>
+          <Gallery op={op} />
           <Button variant="contained"
             onClick={() => ws.submitTxt2ImgQuick({ options })}
           > Quick Submit {info && `(${info.num_quick_images} Image${info.num_quick_images > 1 ? 's' : ''})`}</Button>
