@@ -7,6 +7,10 @@ import opts
 from processors.txt2img import process_txt2img
 from processors.img2img import process_img2img
 from scripts.utils import pil_to_bytes
+from output_manager import make_output_dir
+import itertools
+
+make_output_dir()
 
 app = Flask(__name__, static_url_path='')
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -24,6 +28,22 @@ def handle_ping(data):
     data['steps'] += 1
     emit("pong", data)
     print("client has connected")
+
+def create_output_callback(op):
+    def output_callback(img, meta, idx):
+        img_bytes = pil_to_bytes(img)
+        emit(f'{op}Result', {"img": img_bytes, "meta": meta, "idx": idx})
+    return output_callback
+
+
+@socketio.on("txt2imgProcedural")
+def handle_txt2imgProcedural(data):
+    options = data['options']
+    keys = list(options.keys())
+    for x in itertools.product(*[options[k] for k in keys]):
+        overrides = dict(zip(keys, x))
+        print(overrides)
+        process_txt2img(overrides, create_output_callback('txt2img'))
 
 
 @socketio.on("img2img")

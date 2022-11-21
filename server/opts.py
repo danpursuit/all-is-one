@@ -9,7 +9,6 @@ global_opts_dict = dict(
 
     sd_name='CompVis/stable-diffusion-v1-4',
     model_cache_path='cache/sd',
-    scheduler_class='pndm',
     lowram=False,
     lowvram=False,
     medvram=True,
@@ -21,21 +20,23 @@ global_opts_dict = dict(
     ddim_eta=0.0,
     kdiff_quantize=False,
     context="global",
+    outpath="outputs",
 )
 
 txt2img_opts_dict = dict(
     num_batches=1,
     prompt='digital painting of a boy holding a guitar, movie poster, 8k, intricate',
-    negative='low quality, bad hands',
+    negative_prompt='low quality, bad hands',
     guidance_scale=18.,
     num_inference_steps=20,
     height=512,
     width=512,
-    outpath="outputs/txt2img",
     seed=1212475738,
     num_images_per_prompt=1,
     context="txt2img",
+    scheduler_class='pndm',
 )
+
 img2img_opts_dict = dict(
     num_batches=1,
     prompt='digital painting of a space car, movie poster, 8k, intricate',
@@ -44,13 +45,13 @@ img2img_opts_dict = dict(
     num_inference_steps=30,
     height=512,
     width=512,
-    outpath="outputs/img2img",
     seed=42,
     imgpath="outputs/txt2img/00000.png",
     img=None,
     strength=0.75,
     num_images_per_prompt=1,
     context="img2img",
+    scheduler_class='pndm',
 )
 
 global_opts = SimpleNamespace(**global_opts_dict)
@@ -75,7 +76,7 @@ def set_opts(*args):
     source = opt
     return opt
 
-
+# pass in one of the defined Namespaces to override globally
 def update_opts(opt, overrides):
     if not overrides:
         return opt

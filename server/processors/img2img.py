@@ -7,6 +7,7 @@ from PIL import Image
 import opts
 from pipelines.img2img_pipeline import Img2ImgPipeline
 from scripts.utils import bytes_to_pil
+from output_manager import save_img
 
 
 def step_callback(step: int, timestep: int, latents: torch.FloatTensor):
@@ -15,8 +16,6 @@ def step_callback(step: int, timestep: int, latents: torch.FloatTensor):
 
 def process_img2img(overrides=None):
     opt = opts.set_opts(opts.global_opts, opts.img2img_opts, overrides)
-    os.makedirs(opt.outpath, exist_ok=True)
-    base_count = len(os.listdir(opt.outpath))
 
     if opt.img:
         init_image = bytes_to_pil(opt.img)
@@ -42,9 +41,7 @@ def process_img2img(overrides=None):
             # callback_steps=1,
         )
         for img in output:
-            img.save(os.path.join(
-                opt.outpath, f"{base_count:05}.png"))
-            base_count += 1
+            save_img(img, opt)
     opts.clear_opts()
     return output
 

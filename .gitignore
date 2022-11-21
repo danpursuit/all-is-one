@@ -3,11 +3,13 @@ server/test.png
 server/repositories/
 *.ckpt
 cache/
-src/
+server/src/
+server/outputs/
 
 # server/static
 client/build
 client/node_modules
+client/output
 
 
 # Byte-compiled / optimized / DLL files
