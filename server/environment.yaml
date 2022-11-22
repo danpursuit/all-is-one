@@ -31,6 +31,8 @@ dependencies:
     - Flask==2.1.2
     - Flask-Cors==3.0.10
     - Flask-SocketIO==5.2.0
+    - gevent-websocket
+    - eventlet
     - -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
     - -e git+https://github.com/openai/CLIP.git@main#egg=clip
     - -e git+https://github.com/CompVis/stable-diffusion.git@main#egg=latent-diffusion

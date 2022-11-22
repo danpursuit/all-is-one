@@ -1,6 +1,7 @@
 import { Box, Button, TextField, MenuItem, IconButton, Stack, Typography, getStepButtonUtilityClass, Select } from '@mui/material'
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { setTip } from '../actions';
 import { INIT_BATCH_OPTION, SET_BATCH_OPTION } from '../constants/actionTypes';
 import BatchOptions from './BatchOptions';
 
@@ -12,10 +13,10 @@ const BatchOptionSelect = ({ name, defaultValue = 'euler', items, ...args }) => 
     const data = useSelector(state => state.main.options[name]);
     const handleOptChange = (e) => { dispatch({ type: SET_BATCH_OPTION, payload: { ...data, values: data.values.map((v, i) => i === data.idx ? e.target.value : v) } }) }
     return (
-        <Box sx={{ display: 'inline-block', position: 'relative' }} onMouseEnter={() => setHovered(true)}
+        <Box sx={{ display: 'inline-block', position: 'relative' }} onMouseEnter={() => { dispatch(setTip(name)); setHovered(true) }}
             onMouseLeave={() => setHovered(false)}>
             {data && <>
-                <Select sx={{ minWidth: 150 }} value={data.values[data.idx]} onChange={handleOptChange} {...args}>
+                <Select sx={{ minWidth: 220 }} value={data.values[data.idx]} onChange={handleOptChange} {...args}>
                     {items.map((item, i) => <MenuItem key={i} value={item.key}>{item.value}</MenuItem>)}
                 </Select>
                 {(hovered || data.values.length > 1) && <BatchOptions data={data} defaultValue={defaultValue} />}</>}

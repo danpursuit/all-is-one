@@ -3,10 +3,10 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { Link, TextField, FormControl, Slider, Button } from '@mui/material';
-import ProTip from './components/ProTip';
 import { WebSocketContext } from './WebSocket';
 import ImageUpload from './components/ImageUpload';
 import Txt2ImgInterface from './interfaces/Txt2ImgInterface';
+import Img2ImgInterface from './interfaces/Img2ImgInterface';
 
 function Copyright() {
   return (
@@ -41,10 +41,9 @@ export default function App() {
         <Slider aria-label="steps" name="stepsSlider" value={steps} onChange={handleChange} />
         <Button variant="contained" onClick={() => handleClick()}>Click me</Button>
         <ImageUpload />
-        <ProTip />
         <Copyright />
       </Box> */}
-      <Txt2ImgInterface />
+      <Img2ImgInterface />
     </Container>
   );
 }

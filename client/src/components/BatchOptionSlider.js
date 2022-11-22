@@ -1,6 +1,7 @@
 import { Box, Button, TextField, IconButton, Slider, Stack, Typography, getStepButtonUtilityClass } from '@mui/material'
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { setTip } from '../actions';
 import { INIT_BATCH_OPTION, SET_BATCH_OPTION } from '../constants/actionTypes';
 import BatchOptions from './BatchOptions';
 const BatchOptionSlider = ({ name, defaultValue = 1, label, useBatch = true, ...args }) => {
@@ -11,14 +12,15 @@ const BatchOptionSlider = ({ name, defaultValue = 1, label, useBatch = true, ...
     const data = useSelector(state => state.main.options[name]);
     const handleOptChange = (e, newValue) => { dispatch({ type: SET_BATCH_OPTION, payload: { ...data, values: data.values.map((v, i) => i === data.idx ? newValue : v) } }) }
     return (
-        <Box sx={{ display: 'inline-block', position: 'relative', flex: '1 1' }} onMouseEnter={() => setHovered(true)}
+        <Box sx={{ display: 'inline-block', position: 'relative', flex: '1 1' }} onMouseEnter={() => { dispatch(setTip(name)); setHovered(true) }}
             onMouseLeave={() => setHovered(false)}>
             {data && <>
                 <Stack spacing={1}>
                     <Typography>{label}: {data.values[data.idx]}</Typography>
                     <Slider value={data.values[data.idx]} onChange={handleOptChange} {...args} />
                 </Stack>
-                {useBatch && (hovered || data.values.length > 1) && <BatchOptions data={data} defaultValue={defaultValue} />}</>}
+                {useBatch && (hovered || data.values.length > 1) && <BatchOptions data={data} defaultValue={defaultValue} />}
+            </>}
         </Box>
     )
 }

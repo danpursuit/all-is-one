@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 import torch
+import random
 
 global_opts_dict = dict(
     # model_cf_path='src/latent-diffusion/configs/stable-diffusion/v1-inference.yaml',
@@ -8,7 +9,8 @@ global_opts_dict = dict(
     # ddim_vae_path='models/diffusion_ddim/vae',
 
     sd_name='CompVis/stable-diffusion-v1-4',
-    model_cache_path='cache/sd',
+    model_cache_path='cache/merge2',
+    face_res_cache_path='cache/face_res',
     lowram=False,
     lowvram=False,
     medvram=True,
@@ -60,11 +62,7 @@ img2img_opts = SimpleNamespace(**img2img_opts_dict)
 
 source = None
 
-
-def set_opts(*args):
-    global source
-    if source:
-        raise RuntimeError("opts already set")
+def sim_opts(*args):
     opt = SimpleNamespace()
     for arg in args:
         if arg is None:
@@ -73,8 +71,25 @@ def set_opts(*args):
             arg = SimpleNamespace(**arg)
         for k, v in arg.__dict__.items():
             setattr(opt, k, v)
-    source = opt
+    opt.seed = int(opt.seed)
+    if opt.seed == -1:
+        opt.seed = random.randint(0, 2**32)
     return opt
+
+def set_opts(*args):
+    global source
+    if source:
+        raise RuntimeError("opts already set")
+    source = sim_opts(*args)
+    return source
+
+def fix_client_seed(options):
+    options['seed'] = [int(s) for s in options['seed']]
+    if len(options['seed']) == 1 and options['seed'][0] == -1:
+        options['seed'][0] = random.randint(0, 2**32)
+        print('fixed random seed to', options['seed'])
+    return options
+
 
 # pass in one of the defined Namespaces to override globally
 def update_opts(opt, overrides):

@@ -1,29 +1,29 @@
 import { Button, Card, MenuItem, Select, Slider, Stack, TextField, Typography } from '@mui/material'
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import RedoIcon from '@mui/icons-material/Redo';
-import UndoIcon from '@mui/icons-material/Undo';
 import Grid from '@mui/material/Unstable_Grid2'
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import LinearProgressWithLabel from '../components/LinearProgressWithLabel';
+import JobProgress from '../components/JobProgress';
 import BatchOptionTextInput from '../components/BatchOptionTextInput';
-import { REDO, UNDO } from '../constants/actionTypes';
+import { REDO, UNDO, SUBMIT_START } from '../constants/actionTypes';
 import BatchOptionSlider from '../components/BatchOptionSlider';
 import BatchOptionSelect from '../components/BatchOptionSelect';
 import schedulers from '../constants/schedulers';
 import { WebSocketContext } from '../WebSocket';
 import { txt2imgOpts } from '../constants/options';
 import Gallery from '../components/Gallery';
+import Tips from '../components/Tips';
+import { setTip } from '../actions';
+import PromptHelp from '../components/PromptHelp';
+import SubmitButt from '../components/SubmitButt';
+import UndoRedo from '../components/UndoRedo';
 
 const optNames = txt2imgOpts;
 const op = 'txt2img';
 const Txt2ImgInterface = () => {
   const dispatch = useDispatch();
   const ws = React.useContext(WebSocketContext);
-  const history = useSelector(state => state.main.history);
-  const historyIndex = useSelector(state => state.main.historyIndex);
   const options = useSelector(state => state.main.options);
+  const submitStatus = useSelector(state => state.main.submitStatus);
   const [info, setInfo] = React.useState({});
   useEffect(() => {
     const allOptionsReady = Object.keys(optNames).every(k => options[optNames[k]]);
@@ -59,43 +59,27 @@ const Txt2ImgInterface = () => {
             <BatchOptionSlider name={optNames.width} label='Width' defaultValue={512} min={32} max={2048} step={32} />
           </Stack>
           <Stack direction="row" spacing={2}>
-            <BatchOptionSlider name={optNames.num_batches} label='# Batches' defaultValue={4} min={1} max={16} step={1} useBatch={false} />
+            <BatchOptionSlider name={optNames.num_batches} label='# Batches' defaultValue={1} min={1} max={16} step={1} useBatch={false} />
             <BatchOptionSlider name={optNames.num_images_per_prompt} label='Images per Batch' defaultValue={1} min={1} max={8} step={1} useBatch={false} />
           </Stack>
-          <BatchOptionTextInput name={optNames.seed} label='Seed' defaultValue={-1} fullWidth type='number' />
+          <BatchOptionTextInput name={optNames.seed} label='Seed' defaultValue={-1} type='number' />
           <BatchOptionSelect name={optNames.scheduler_class} defaultValue={schedulers[0].key} items={schedulers} />
         </Stack>
       </Grid>
       <Grid item xs={12} md={6}>
         <Stack spacing={2}>
-          <Gallery op={op} />
-          <Button variant="contained"
-            onClick={() => ws.submitTxt2ImgQuick({ options })}
-          > Quick Submit {info && `(${info.num_quick_images} Image${info.num_quick_images > 1 ? 's' : ''})`}</Button>
-          <Button variant="contained"
-            onClick={() => ws.submitTxt2ImgProcedural({ options })}
-          > Procedural Submit {info && `(${info.num_procedural_batches} Config${info.num_procedural_batches > 1 ? 's' : ''}, ${info.num_procedural_images} Image${info.num_procedural_images > 1 ? 's' : ''})`} </Button>
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained"> Load Settings </Button>
-            <Button variant="contained"> Clear </Button>
+          <Gallery op={op} optNames={optNames} />
+          <SubmitButt info={info} ws={ws} op={op} options={options} optNames={optNames} submitStatus={submitStatus} />
+          <SubmitButt info={info} ws={ws} op={op} options={options} optNames={optNames} submitStatus={submitStatus} isProcedural />
+          <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+            <UndoRedo />
+            <PromptHelp options={options} optNames={optNames} />
           </Stack>
-          <Stack direction="row" spacing={2}>
-            <NavigateBeforeIcon />
-            <Typography>1 of 200</Typography>
-            <NavigateNextIcon />
-          </Stack>
-          <Stack direction="row" spacing={2}>
-            <Button disabled={historyIndex < 0} onClick={() => dispatch({ type: UNDO })}><UndoIcon /></Button>
-            <Button disabled={historyIndex >= history.length - 1} onClick={() => dispatch({ type: REDO })}><RedoIcon /></Button>
-          </Stack>
-          <Typography variant='body2'>
-            Seed: starting number to control the randomness of your
-            generation. Same seed will give same results. Use -1 for
-            a random seed.</Typography>
-          <LinearProgressWithLabel value={50} />
+          <Tips />
+          <JobProgress submitStatus={submitStatus} />
         </Stack>
       </Grid>
-    </Grid>
+    </Grid >
   )
 }
 

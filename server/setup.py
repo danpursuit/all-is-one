@@ -10,7 +10,7 @@ load_dotenv()
 
 # download the default model
 os.makedirs(opts.global_opts.model_cache_path, exist_ok=True)
-print('downloading')
+print('downloading base 1.4 model')
 pipe = StableDiffusionPipeline.from_pretrained(
     'CompVis/stable-diffusion-v1-4',
     torch_dtype=opts.global_opts.dtype,
@@ -18,6 +18,11 @@ pipe = StableDiffusionPipeline.from_pretrained(
 )
 print('saving to', opts.global_opts.model_cache_path)
 pipe.save_pretrained(opts.global_opts.model_cache_path)
+
+# download the codeformer face restoration model
+os.makedirs(opts.global_opts.face_res_cache_path, exist_ok=True)
+print('downloading face restoration model')
+
 
 
 # below is a way to create your own fine tuned model from a ckpt file
