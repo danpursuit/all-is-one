@@ -14,6 +14,7 @@ export const txt2imgNames = Object.keys(txt2imgOpts);
 
 
 export const img2imgOpts = {
+    img: 'img2img-img',
     prompt: 'img2img-prompt',
     negative_prompt: 'img2img-prompt-neg',
     guidance_scale: 'img2img-prompt-weight',
@@ -24,5 +25,6 @@ export const img2imgOpts = {
     num_images_per_prompt: 'img2img-im-per-batch',
     seed: 'img2img-seed',
     scheduler_class: 'img2img-scheduler',
+    strength: 'img2img-strength',
 }
 export const img2imgNames = Object.keys(img2imgOpts);

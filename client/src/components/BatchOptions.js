@@ -22,7 +22,7 @@ const BatchOptions = ({ data, defaultValue }) => {
         <Stack direction='row' spacing={1} justifyContent='flex-end'>
             {data.values.length > 1 && <RemoveIcon sx={{ ...styles.overlayButton, ...(data.values.length <= 1 && styles.disabled) }} onClick={removeOpt} />}
             {data.values.length > 1 && <NavigateBeforeIcon sx={{ ...styles.overlayButton, ...(data.idx === 0 && styles.disabled) }} onClick={prevOpt} />}
-            {data.values.length > 3 && <Typography>{data.idx + 1} / {data.values.length} </Typography>}
+            {data.values.length > 2 && <Typography>{data.idx + 1} / {data.values.length} </Typography>}
             {data.values.length > 1 && <NavigateNextIcon sx={{ ...styles.overlayButton, ...(data.idx === data.values.length - 1 && styles.disabled) }} onClick={nextOpt} />}
             <AddIcon sx={styles.overlayButton} onClick={addOpt} />
         </Stack>

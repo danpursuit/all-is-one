@@ -7,6 +7,8 @@ import { WebSocketContext } from './WebSocket';
 import ImageUpload from './components/ImageUpload';
 import Txt2ImgInterface from './interfaces/Txt2ImgInterface';
 import Img2ImgInterface from './interfaces/Img2ImgInterface';
+import Navbar from './components/Navbar';
+import { useSelector } from 'react-redux';
 
 function Copyright() {
   return (
@@ -24,6 +26,7 @@ function Copyright() {
 export default function App() {
   const [steps, setSteps] = React.useState(30);
   const ws = React.useContext(WebSocketContext);
+  const location = useSelector(state => state.main.location);
 
   const handleChange = (event, newValue) => {
     // console.log('event', event);
@@ -43,7 +46,9 @@ export default function App() {
         <ImageUpload />
         <Copyright />
       </Box> */}
-      <Img2ImgInterface />
+      <Navbar />
+      {location === 'txt2img' && <Txt2ImgInterface />}
+      {location === 'img2img' && <Img2ImgInterface />}
     </Container>
   );
 }

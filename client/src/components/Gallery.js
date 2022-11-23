@@ -6,12 +6,13 @@ import FileCopyTwoToneIcon from '@mui/icons-material/FileCopyTwoTone';
 import GridOnOutlinedIcon from '@mui/icons-material/GridOnOutlined';
 import GridOnTwoToneIcon from '@mui/icons-material/GridOnTwoTone';
 import CircularProgress from '@mui/material/CircularProgress';
+import ClearIcon from '@mui/icons-material/Clear';
 
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { WebSocketContext } from '../WebSocket';
-import { SET_CURRENT_IMAGE, SET_BATCH_OPTIONS } from '../constants/actionTypes';
-import { MIRROR, SHOW_BATCH } from '../constants/features';
+import { SET_CURRENT_IMAGE, SET_BATCH_OPTIONS, DELETE_SINGLE_IMAGE, DELETE_BATCH } from '../constants/actionTypes';
+import { CONFIRM_DELETE, CONFIRM_DELETE_BATCH, MIRROR, SHOW_BATCH } from '../constants/features';
 import { setTip } from '../actions';
 
 const styles = {
@@ -31,15 +32,23 @@ const styles = {
     selected: {
         boxSizing: 'border-box',
         border: '4px solid #0000ff',
+    },
+    deleteMode0: {
+
+    },
+    deleteMode1: {
+        backgroundColor: 'red'
     }
 }
 const Gallery = ({ op, optNames }) => {
     const ws = React.useContext(WebSocketContext);
     const dispatch = useDispatch();
     const data = useSelector(state => state.galleries.galleries[op]);
+    const submitStatus = useSelector(state => state.main.submitStatus);
     const blankImg = useSelector(state => state.main.blanks.image);
     const [mirroring, setMirroring] = React.useState(false);
     const [showBatch, setShowBatch] = React.useState(false);
+    const [deleteMode, setDeleteMode] = React.useState(0);
 
     // have ws request data on init
     React.useEffect(() => {
@@ -55,19 +64,22 @@ const Gallery = ({ op, optNames }) => {
             return;
         }
         if (showBatch) {
+            const jobId = imgData['job_id']
+            if (!data.batchMeta[jobId]) {
+                ws.reqBatchMeta({ op, jobId });
+                return;
+            }
             // request all images in batch that don't exist
-            const startIdx = data.currentImage - imgData.idx_in_job;
-            const endIdx = startIdx + imgData.job_size;
+            // const startIdx = data.currentImage - imgData.idx_in_job;
+            // const endIdx = startIdx + imgData.job_size;
+            const startIdx = data.batchMeta[jobId].start_idx;
+            const endIdx = data.batchMeta[jobId].end_idx;
             let requested = false;
             for (let i = startIdx; i < endIdx; i++) {
                 if (data.imgData[i] === undefined) {
                     ws.reqImageByIdx({ op, idx: i });
                     requested = true;
                 }
-            }
-            if (!data.batchMeta[startIdx]) {
-                ws.reqBatchMeta({ op, idx: startIdx });
-                requested = true;
             }
             if (requested) return;
             if (mirroring) {
@@ -103,13 +115,46 @@ const Gallery = ({ op, optNames }) => {
     }, [data.currentImage, data.imgData[data.currentImage], mirroring, showBatch]);
     const prevImage = () => {
         if (data.numImages === 0) return;
-        const idx = data.currentImage === -1 ? data.numImages - 1 : (data.currentImage - 1 + data.numImages) % data.numImages;
+        let idx;
+        if (showBatch && data.currentImage !== -1 && !mirroring) {
+            // go to last image of last batch
+            const startIdx = data.currentImage - data.imgData[data.currentImage].idx_in_job;
+            idx = (startIdx - 1 + data.numImages) % data.numImages;
+        } else {
+            idx = data.currentImage === -1 ? data.numImages - 1 : (data.currentImage - 1 + data.numImages) % data.numImages;
+        }
         dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx } });
     }
     const nextImage = () => {
         if (data.numImages === 0) return;
-        const idx = (data.currentImage + 1 + data.numImages) % data.numImages;
+        let idx;
+        if (showBatch && !mirroring && data.currentImage !== -1) {
+            // go to last image of last batch
+            console.log(data.currentImage, data.imgData[data.currentImage].idx_in_job, data.imgData[data.currentImage].job_size);
+            idx = (data.currentImage - data.imgData[data.currentImage].idx_in_job + data.imgData[data.currentImage].job_size) % data.numImages;
+        } else {
+            idx = (data.currentImage + 1 + data.numImages) % data.numImages;
+        }
         dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx } });
+    }
+    const tryDeleteImage = () => {
+        if (deleteMode === 0) {
+            setDeleteMode(1);
+            if (showBatch) {
+                dispatch(setTip(CONFIRM_DELETE_BATCH));
+            } else {
+                dispatch(setTip(CONFIRM_DELETE));
+            }
+            return;
+        } else if (deleteMode === 1) {
+            setDeleteMode(0);
+            if (showBatch) {
+                ws.deleteBatch({ op, idx: data.currentImage });
+            } else {
+                ws.deleteSingleImage({ op, idx: data.currentImage });
+            }
+            return;
+        }
     }
     // several display types:
     // no image (idx -1)
@@ -119,7 +164,7 @@ const Gallery = ({ op, optNames }) => {
     // render a single image, or one in the batch
     const renderImage = (currentImage, circleSize = 200, selected = false) => {
         return data.imgData[currentImage] ?
-            <img src={data.imgData[currentImage].img} style={{ ...styles.img, ...(!showBatch && styles.imgLarge), ...(selected && styles.selected) }} onClick={() => {
+            <img src={data.imgData[currentImage].imgResult} style={{ ...styles.img, ...(!showBatch && styles.imgLarge), ...(selected && styles.selected) }} onClick={() => {
                 if (showBatch) {
                     setShowBatch(false);
                     dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx: currentImage } });
@@ -136,12 +181,21 @@ const Gallery = ({ op, optNames }) => {
     const renderBatch = () => {
         if (!data.imgData[data.currentImage]) return renderImage(data.currentImage);
         const imgData = data.imgData[data.currentImage];
-        const startIdx = data.currentImage - imgData.idx_in_job;
-        const endIdx = startIdx + imgData.job_size;
+        const jobId = imgData.job_id;
+        let startIdx, endIdx, jobSize;
+        if (data.batchMeta[jobId]) {
+            startIdx = data.batchMeta[jobId].start_idx;
+            endIdx = data.batchMeta[jobId].end_idx;
+            jobSize = endIdx - startIdx;
+        } else {
+            startIdx = data.currentImage - imgData.idx_in_job;
+            endIdx = startIdx + imgData.job_size;
+            jobSize = imgData.job_size;
+        }
         const batch = [];
         let gridSize = 3;
-        if (imgData.job_size <= 4) gridSize = 6;
-        else if (imgData.job_size <= 6) gridSize = 4;
+        if (jobSize <= 4) gridSize = 6;
+        else if (jobSize <= 6) gridSize = 4;
         for (let i = startIdx; i < endIdx; i++) {
             batch.push(
                 <Grid item xs={gridSize - 0.1} key={i}>
@@ -160,6 +214,15 @@ const Gallery = ({ op, optNames }) => {
                 }
             </Card>
             <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+                <IconButton disabled={data.numImages <= 0 || submitStatus.inProgress}
+                    onClick={tryDeleteImage} sx={styles['deleteButt' + deleteMode]}
+                    onMouseEnter={() => {
+                        if (deleteMode === 0) {
+                            dispatch(setTip(showBatch ? DELETE_BATCH : DELETE_SINGLE_IMAGE))
+                        }
+                    }}>
+                    <ClearIcon />
+                </IconButton>
                 <Checkbox
                     onMouseEnter={() => dispatch(setTip(MIRROR))}
                     checked={mirroring}

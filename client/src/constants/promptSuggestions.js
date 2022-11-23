@@ -1,0 +1,107 @@
+const styles = [
+    'digital painting',
+    'digital art',
+    'digital',
+    'anime',
+    'painting',
+    'illustration',
+    'movie poster',
+    'book cover',
+    'manga cover',
+    'comic book cover',
+    'cartoon',
+    'photo',
+    'portrait',
+].sort();
+
+const shot_types = [
+    'establishing shot',
+    'medium wide shot',
+    'medium shot',
+    'medium close up',
+    'close up',
+    'extreme close up',
+    'low angle shot',
+    'high angle shot',
+    'over the shoulder shot',
+    'two shot',
+    'dutch angle',
+    'aerial shot',
+    'birds eye shot',
+]
+
+const effects = [
+    '80s',
+    '90s',
+    '2000s',
+    '2010s',
+    '2020s',
+    'abstract',
+    'unreal engine',
+    'trending on artstation',
+    'trending on deviantart',
+    'polaroid',
+    'vintage',
+    'professional photograph',
+    'canon m50',
+].sort();
+
+const prompt_rituals = [
+    'realistic',
+    'realistic photo',
+    'realistic anatomy',
+    'realistic portrait',
+    'masterpiece',
+    'highres',
+    'detailed',
+    '8k',
+    'intricate',
+    'sharp colors',
+    'soft focus',
+    'vivid'
+].sort()
+
+const negative_rituals = [
+    'lowres',
+    'bad anatomy',
+    'bad hands',
+    'text',
+    'error',
+    'missing fingers',
+    'mutated hands',
+    'extra digit',
+    'fewer digits',
+    'cropped',
+    'worst qualilty',
+    'low quality',
+    'normal quality',
+    'jpeg artifacts',
+    'signature',
+    'watermark',
+    'username',
+    'blurry',
+    'mutilated',
+    'out of frame',
+    'fused fingers',
+    'cartoon',
+    'anime',
+    'grainy',
+    'ugly',
+    'pixelated',
+    'long neck',
+    'poorly drawn face',
+    'gross proportions',
+    'disfigured',
+    'bad proportions',
+    'big ears',
+].sort()
+
+export default {
+    'Image Types': styles,
+    'Effects': effects,
+    'Shot Types': shot_types,
+    'Rituals': {
+        'Prompt': prompt_rituals,
+        'Negative Prompt': negative_rituals,
+    }
+}

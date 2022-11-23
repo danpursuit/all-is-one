@@ -3,9 +3,9 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import io from 'socket.io-client';
-import { INTERRUPTED, IMG_RESULT, ADD_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, IN_PROGRESS_START } from './constants/actionTypes';
+import { INTERRUPTED, IMG_RESULT, DELETE_SINGLE_IMAGE, DELETE_BATCH, ADD_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, IN_PROGRESS_START } from './constants/actionTypes';
 import baseURL from './constants/url';
-import { txt2imgNames, txt2imgOpts } from './constants/options';
+import { txt2imgNames, txt2imgOpts, img2imgNames, img2imgOpts } from './constants/options';
 
 const WebSocketContext = React.createContext(null)
 
@@ -21,8 +21,23 @@ export default ({ children }) => {
     const ping = ({ steps }) => {
         socket.emit("ping", { steps });
     }
-    const submitImg2Img = ({ img }) => {
-        socket.emit("img2img", { img });
+    const submitQuick = ({ options, op }) => {
+        if (op === 'txt2img') {
+            return submitTxt2ImgQuick({ options });
+        } else if (op === 'img2img') {
+            return submitImg2ImgQuick({ options });
+        } else {
+            console.log('unknown op', op);
+        }
+    }
+    const submitProcedural = ({ options, op }) => {
+        if (op === 'txt2img') {
+            return submitTxt2ImgProcedural({ options });
+        } else if (op === 'img2img') {
+            return submitImg2ImgProcedural({ options });
+        } else {
+            console.log('unknown op', op);
+        }
     }
     const submitTxt2ImgQuick = ({ options }) => {
         const opts = {};
@@ -34,18 +49,35 @@ export default ({ children }) => {
         txt2imgNames.forEach((name, i) => opts[name] = options[txt2imgOpts[name]].values);
         socket.emit('txt2imgProcedural', { options: opts });
     }
+    const submitImg2ImgQuick = ({ options }) => {
+        const opts = {};
+        img2imgNames.forEach((name, i) => opts[name] = [options[img2imgOpts[name]].values[options[img2imgOpts[name]].idx]]);
+        socket.emit('img2imgProcedural', { options: opts });
+    }
+    const submitImg2ImgProcedural = ({ options }) => {
+        const opts = {};
+        img2imgNames.forEach((name, i) => opts[name] = options[img2imgOpts[name]].values);
+        socket.emit('img2imgProcedural', { options: opts });
+    }
     const reqImageByIdx = ({ op, idx }) => {
         socket.emit('reqImageByIdx', { op, idx });
     }
     const reqNumImages = ({ op }) => {
         socket.emit('reqNumImages', { op });
     }
-    const reqBatchMeta = ({ op, idx }) => {
+    const reqBatchMeta = ({ op, jobId }) => {
         // request metadata for the entire batch, idx=startIdx
-        socket.emit('reqBatchMeta', { op, idx });
+        console.log('reqBatchMeta', op, jobId);
+        socket.emit('reqBatchMeta', { op, jobId });
     }
     const interrupt = ({ op }) => {
         socket.emit('interrupt', { op });
+    }
+    const deleteSingleImage = ({ op, idx }) => {
+        socket.emit('deleteSingleImage', { op, idx });
+    }
+    const deleteBatch = ({ op, idx }) => {
+        socket.emit('deleteBatch', { op, idx });
     }
     if (!socket) {
         console.log('connecting');
@@ -55,8 +87,8 @@ export default ({ children }) => {
         } else {
             socket = io.connect(baseURL);
             // clear localUpdate on disconnect
-            socket.on('disconnect', () => {
-                console.log('disconnected?');
+            socket.on('disconnect', (reason) => {
+                console.log('disconnected?', reason);
                 if (localUpdate) {
                     clearInterval(localUpdate);
                 }
@@ -68,15 +100,26 @@ export default ({ children }) => {
             socket.on("pong", (msg) => {
                 console.log('pong:', msg);
             })
-            socket.on("img2imgResult", ({ img, metadata }) => {
-                dispatch({ type: IMG_RESULT, payload: 'data:image/png;base64,' + img });
+            socket.on("img2imgResult", ({ img, meta, idx }) => {
+                dispatch({
+                    type: ADD_IMAGE,
+                    payload: {
+                        imgData: {
+                            imgResult: 'data:image/png;base64,' + img,
+                            ...meta
+                        },
+                        op: meta.context,
+                        idx,
+                        numImages: idx + 1
+                    }
+                })
             })
             socket.on("txt2imgResult", ({ img, meta, idx }) => {
                 dispatch({
                     type: ADD_IMAGE,
                     payload: {
                         imgData: {
-                            img: 'data:image/png;base64,' + img,
+                            imgResult: 'data:image/png;base64,' + img,
                             ...meta
                         },
                         op: meta.context,
@@ -99,11 +142,30 @@ export default ({ children }) => {
                     type: ADD_IMAGE,
                     payload: {
                         imgData: {
-                            img: 'data:image/png;base64,' + img,
+                            imgResult: 'data:image/png;base64,' + img,
                             ...meta
                         },
                         op,
                         idx
+                    }
+                })
+            })
+            socket.on('deletedSingleImage', ({ op, idx }) => {
+                dispatch({
+                    type: DELETE_SINGLE_IMAGE,
+                    payload: {
+                        op,
+                        idx
+                    }
+                })
+            })
+            socket.on('deletedBatch', ({ op, idx, numImages }) => {
+                dispatch({
+                    type: DELETE_BATCH,
+                    payload: {
+                        op,
+                        idx: Math.min(idx, numImages - 1),
+                        numImages
                     }
                 })
             })
@@ -120,10 +182,10 @@ export default ({ children }) => {
                     type: INTERRUPTED
                 })
             })
-            socket.on('batchMeta', ({ op, meta, idx }) => {
+            socket.on('batchMeta', ({ op, meta, jobId }) => {
                 dispatch({
                     type: RCV_BATCH_META,
-                    payload: { op, idx, meta }
+                    payload: { op, idx: jobId, meta }
                 })
             })
             // //generic
@@ -139,13 +201,18 @@ export default ({ children }) => {
         ws = {
             socket,
             ping,
-            submitImg2Img,
             submitTxt2ImgQuick,
             submitTxt2ImgProcedural,
+            submitImg2ImgQuick,
+            submitImg2ImgProcedural,
             reqNumImages,
             reqImageByIdx,
             reqBatchMeta,
-            interrupt
+            submitProcedural,
+            submitQuick,
+            interrupt,
+            deleteSingleImage,
+            deleteBatch
         }
 
         return (

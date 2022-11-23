@@ -9,11 +9,8 @@ global_opts_dict = dict(
     # ddim_vae_path='models/diffusion_ddim/vae',
 
     sd_name='CompVis/stable-diffusion-v1-4',
-    model_cache_path='cache/merge2',
+    model_cache_path='cache/sd',
     face_res_cache_path='cache/face_res',
-    lowram=False,
-    lowvram=False,
-    medvram=True,
     dtype=torch.float16,
     device=torch.device(
         "cuda") if torch.cuda.is_available() else torch.device("cpu"),

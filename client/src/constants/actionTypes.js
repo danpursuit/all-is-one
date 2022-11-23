@@ -20,5 +20,11 @@ export const SUBMIT_START = 'SUBMIT_START';
 export const IN_PROGRESS_START = 'IN_PROGRESS_START';
 export const INTERRUPTED = 'INTERRUPTED';
 
+export const DELETE_SINGLE_IMAGE = 'DELETE_SINGLE_IMAGE';
+export const DELETE_BATCH = 'DELETE_BATCH';
+
 // tips
 export const SET_TIP = 'SET_TIP';
+
+// location
+export const SET_LOCATION = 'SET_LOCATION';

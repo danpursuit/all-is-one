@@ -5,6 +5,7 @@ from pytorch_lightning import seed_everything
 from PIL import Image
 
 import opts
+import control
 from pipelines.img2img_pipeline import Img2ImgPipeline
 from scripts.utils import bytes_to_pil
 from output_manager import save_img
@@ -14,7 +15,7 @@ def step_callback(step: int, timestep: int, latents: torch.FloatTensor):
     print(f"Step {step} Timestep {timestep} Latents {latents.shape}")
 
 
-def process_img2img(overrides=None):
+def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0, job_size=0):
     opt = opts.set_opts(opts.global_opts, opts.img2img_opts, overrides)
 
     if opt.img:
@@ -25,7 +26,10 @@ def process_img2img(overrides=None):
     pipe = Img2ImgPipeline.create_pipeline(opt).to('cuda')
 
     generator = torch.Generator('cuda').manual_seed(opt.seed)
-    for n in trange(opt.num_batches, desc="Sampling"):
+    idx_in_cf = 0
+    for n in trange(opt.num_batches, desc="Batches"):
+        if control.interrupt:
+            break
         output = pipe(
             prompt=opt.prompt,
             strength=opt.strength,
@@ -40,8 +44,16 @@ def process_img2img(overrides=None):
             # callback=step_callback,
             # callback_steps=1,
         )
-        for img in output:
-            save_img(img, opt)
+        for idx_in_batch, img in enumerate(output):
+            img, meta, idx = save_img(img, opt, 
+                idx_in_cf=idx_in_cf, 
+                idx_in_job=idx_in_job+idx_in_cf,
+                cf_idx_in_job=cf_idx_in_job,
+                job_size=job_size
+            )
+            idx_in_cf += 1
+            if callback:
+                callback(img, meta, idx)
     opts.clear_opts()
     return output
 

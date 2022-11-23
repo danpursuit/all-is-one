@@ -1,4 +1,4 @@
-import { IMG_UPLOAD, IMG_RESULT, ADD_IMAGE, INIT_BATCH_OPTION, SET_BATCH_OPTION, SET_BATCH_OPTIONS, UNDO, REDO, SUBMIT_START, IN_PROGRESS_START, INTERRUPTED } from "../constants/actionTypes";
+import { IMG_UPLOAD, IMG_RESULT, ADD_IMAGE, INIT_BATCH_OPTION, SET_BATCH_OPTION, SET_BATCH_OPTIONS, UNDO, REDO, SUBMIT_START, IN_PROGRESS_START, INTERRUPTED, SET_LOCATION } from "../constants/actionTypes";
 import { IMG2IMG } from "../constants/features";
 // import blank.png
 import blank from "../images/blank.png";
@@ -32,7 +32,8 @@ const initialState = {
     lastUndo: null,
     submitStatus: {
         ...initialSubmitStatus
-    }
+    },
+    location: 'txt2img'
 }
 export default (state = initialState, action) => {
     let history, prevState;
@@ -208,6 +209,12 @@ export default (state = initialState, action) => {
                     }
                 }
                 return state
+            case SET_LOCATION:
+                console.log('set location', action.payload);
+                return {
+                    ...state,
+                    location: action.payload.location
+                }
             default:
                 return state;
         }

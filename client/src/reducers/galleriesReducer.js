@@ -1,5 +1,5 @@
 import React from "react";
-import { ADD_IMAGE, SET_CURRENT_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META } from "../constants/actionTypes";
+import { ADD_IMAGE, SET_CURRENT_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, DELETE_SINGLE_IMAGE, DELETE_BATCH } from "../constants/actionTypes";
 
 const ops = ['txt2img', 'img2img']
 const galleryTemplate = {
@@ -15,7 +15,7 @@ const initialState = {
 ops.forEach(op => initialState.galleries[op] = { ...galleryTemplate, op });
 
 export default (state = initialState, action) => {
-    let gallery;
+    let gallery, imgData;
     try {
         switch (action.type) {
             case ADD_IMAGE:
@@ -60,6 +60,43 @@ export default (state = initialState, action) => {
                                 ...gallery.batchMeta,
                                 [action.payload.idx]: action.payload.meta
                             }
+                        }
+                    }
+                }
+            case DELETE_SINGLE_IMAGE:
+                gallery = state.galleries[action.payload.op];
+                // clear all images after the deleted image
+                imgData = { ...gallery.imgData };
+                for (let i = action.payload.idx; i < gallery.numImages; i++) {
+                    if (imgData[i]) delete imgData[i];
+                }
+                return {
+                    ...state,
+                    galleries: {
+                        ...state.galleries,
+                        [action.payload.op]: {
+                            ...gallery,
+                            imgData,
+                            numImages: gallery.numImages - 1,
+                            currentImage: action.payload.idx - 1
+                        }
+                    }
+                }
+            case DELETE_BATCH:
+                gallery = state.galleries[action.payload.op];
+                imgData = { ...gallery.imgData };
+                for (let i = action.payload.idx; i < gallery.numImages; i++) {
+                    if (imgData[i]) delete imgData[i];
+                }
+                return {
+                    ...state,
+                    galleries: {
+                        ...state.galleries,
+                        [action.payload.op]: {
+                            ...gallery,
+                            imgData,
+                            numImages: action.payload.numImages,
+                            currentImage: action.payload.idx - 1
                         }
                     }
                 }

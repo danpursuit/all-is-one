@@ -295,6 +295,8 @@ class Img2ImgPipeline:
         callback: Optional[Callable[[
             int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
+        height: Optional[int] = None,
+        width: Optional[int] = None,
         **kwargs,
     ):
         # 1. Check inputs
@@ -315,6 +317,9 @@ class Img2ImgPipeline:
 
         # 4. Preprocess image
         if isinstance(init_image, PIL.Image.Image):
+            # if width and height and (width, height) != init_image.size:
+            #     print('resizing')
+            #     init_image = init_image.resize((width, height), PIL.Image.LANCZOS)
             init_image = preprocess(init_image)
 
         # 5. set timesteps
