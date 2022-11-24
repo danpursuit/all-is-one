@@ -188,7 +188,7 @@ def handle_delete_batch(data):
         pass
     print('deleted batch', op, job_id)
     count = num_with_ext(get_op_path(op), "png")
-    emit('deletedBatch', {'op': op, 'idx': idx - meta['job_size'], 'numImages': count})
+    emit('deletedBatch', {'op': op, 'idx': idx - meta['job_size'], 'jobId': job_id, 'numImages': count})
 
 @socketio.on('deleteSingleImage')
 def handle_delete_single_image(data):

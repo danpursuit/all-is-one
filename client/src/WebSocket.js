@@ -159,12 +159,13 @@ export default ({ children }) => {
                     }
                 })
             })
-            socket.on('deletedBatch', ({ op, idx, numImages }) => {
+            socket.on('deletedBatch', ({ op, idx, numImages, jobId }) => {
                 dispatch({
                     type: DELETE_BATCH,
                     payload: {
                         op,
-                        idx: Math.min(idx, numImages - 1),
+                        idx: Math.max(Math.min(idx, numImages - 1), 0),
+                        jobId,
                         numImages
                     }
                 })

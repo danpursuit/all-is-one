@@ -96,7 +96,11 @@ export default (state = initialState, action) => {
                             ...gallery,
                             imgData,
                             numImages: action.payload.numImages,
-                            currentImage: action.payload.idx - 1
+                            currentImage: action.payload.idx - 1,
+                            batchMeta: {
+                                ...gallery.batchMeta,
+                                [action.payload.jobId]: undefined
+                            }
                         }
                     }
                 }

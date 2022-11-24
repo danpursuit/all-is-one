@@ -1,4 +1,4 @@
-name: self-stable
+name: ai1
 channels:
   - pytorch
   - defaults
@@ -12,7 +12,6 @@ dependencies:
   - numpy=1.19.2
   - pip:
     - albumentations==0.4.3
-    - diffusers
     - opencv-python==4.1.2.30
     - pudb==2019.2
     - imageio==2.9.0
@@ -31,6 +30,7 @@ dependencies:
     - Flask==2.1.2
     - Flask-Cors==3.0.10
     - Flask-SocketIO==5.2.0
+    - diffusers==0.7.2
     - gevent-websocket
     - eventlet
     - -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
