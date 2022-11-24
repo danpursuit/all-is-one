@@ -46,7 +46,7 @@ def create_output_callback(op):
 
 
 def handle_procedural(data, op):
-    print(f'got {op}Procedural', data)
+    print(f'got {op}Procedural', {i: j for i, j in dict(data['options']).items() if i != 'img'})
     options = opts.fix_client_seed(data['options'])
     keys = list(options.keys())
     job_size = 0
@@ -70,7 +70,7 @@ def handle_procedural(data, op):
                 print(f'leaving {op}Procedural from interrupt')
                 break
             overrides = dict(zip(keys, x))
-            print('generating', overrides)
+            print('generating', {i: j for i, j in overrides.items() if i != 'img'})
             func = {
                 'txt2img': process_txt2img,
                 'img2img': process_img2img,
@@ -104,7 +104,6 @@ def handle_txt2imgProcedural(data):
 @socketio.on("img2imgProcedural")
 def handle_img2imgProcedural(data):
     op = "img2img"
-    print('got img2imgProcedural', data)
     return handle_procedural(data, op)
 
 
