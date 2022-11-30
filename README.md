@@ -26,7 +26,7 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 - cd all-is-one/server
     - for now, /server is the working folder (sorry)
 - conda env create -n ai1 --file environment.yaml
-- conda activate test-stable
+- conda activate ai1
 - get token from https://huggingface.co/settings/tokens
 - create .env file with "HF_TOKEN=[your_token]"
 - python setup.py
