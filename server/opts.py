@@ -1,26 +1,43 @@
 from types import SimpleNamespace
 import torch
 import random
+import os
+import json
 
-global_opts_dict = dict(
-    # model_cf_path='src/latent-diffusion/configs/stable-diffusion/v1-inference.yaml',
-    # model_ckpt_path='models/model.ckpt',
-    # ddim_diffuser_path='models/diffusion_ddim',
-    # ddim_vae_path='models/diffusion_ddim/vae',
+from constants import EMPTY_MODEL
 
-    sd_name='CompVis/stable-diffusion-v1-4',
-    model_cache_path='cache/sd',
-    face_res_cache_path='cache/face_res',
+cf_path = os.path.join(os.path.dirname(__file__), 'local.config')
+force_defaults = False
+if not os.path.exists(cf_path) or force_defaults:
+    defaults = dict(
+        regularChoice=EMPTY_MODEL,
+        inpaintingChoice=EMPTY_MODEL,
+        outpaintingChoice=EMPTY_MODEL,
+        outpath="outputs",
+    )
+    with open(cf_path, "w") as f:
+        json.dump(defaults, f)
+with open(cf_path, "r") as f:
+    defaults = json.load(f)
+global_opts_dict = dict(defaults)
+global_opts_dict.update(dict(
     dtype=torch.float16,
     device=torch.device(
         "cuda") if torch.cuda.is_available() else torch.device("cpu"),
-    intC=4,  # number of channels
-    intF=8,  # downsampling factor
-    ddim_eta=0.0,
-    kdiff_quantize=False,
     context="global",
     outpath="outputs",
-)
+))
+print('global_opts_dict', global_opts_dict)
+
+
+def save_defaults(data):
+    with open(cf_path, "r") as f:
+        defaults = json.load(f)
+    defaults.update(data)
+    print('saving defaults', defaults)
+    with open(cf_path, "w") as f:
+        json.dump(defaults, f)
+
 
 txt2img_opts_dict = dict(
     num_batches=1,
@@ -42,10 +59,7 @@ img2img_opts_dict = dict(
     negative_prompt='',
     guidance_scale=8.,
     num_inference_steps=30,
-    height=512,
-    width=512,
     seed=42,
-    imgpath="outputs/txt2img/00000.png",
     img=None,
     strength=0.75,
     num_images_per_prompt=1,
@@ -58,6 +72,7 @@ txt2img_opts = SimpleNamespace(**txt2img_opts_dict)
 img2img_opts = SimpleNamespace(**img2img_opts_dict)
 
 source = None
+
 
 def sim_opts(*args):
     opt = SimpleNamespace()
@@ -73,12 +88,14 @@ def sim_opts(*args):
         opt.seed = random.randint(0, 2**32)
     return opt
 
+
 def set_opts(*args):
     global source
     if source:
         raise RuntimeError("opts already set")
     source = sim_opts(*args)
     return source
+
 
 def fix_client_seed(options):
     options['seed'] = [int(s) for s in options['seed']]

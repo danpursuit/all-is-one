@@ -7,6 +7,7 @@ import PIL
 
 from transformers import CLIPTextModel, CLIPTokenizer
 
+from diffusers import StableDiffusionInpaintPipeline
 from diffusers.configuration_utils import FrozenDict
 from diffusers.models import AutoencoderKL, UNet2DConditionModel
 from diffusers.pipeline_utils import DiffusionPipeline
@@ -20,7 +21,7 @@ from diffusers.schedulers import (
 from diffusers.utils import is_accelerate_available, logging
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 
-from scripts.utils import numpy_to_pil, preprocess, fit_image
+from scripts.utils import prepare_mask_and_masked_image, numpy_to_pil, fit_image
 from components.autoencoder import load_vae
 from components.scheduler import load_scheduler
 from components.unet import load_unet
@@ -30,24 +31,18 @@ from components.text_encoder import load_text_encoder
 logger = logging.get_logger(__name__)
 
 
-class Img2ImgPipeline:
+class InpaintPipeline:
     def __init__(
         self,
         vae: AutoencoderKL,
         text_encoder: CLIPTextModel,
         tokenizer: CLIPTokenizer,
         unet: UNet2DConditionModel,
-        scheduler: Union[
-            DDIMScheduler,
-            PNDMScheduler,
-            LMSDiscreteScheduler,
-            EulerDiscreteScheduler,
-            EulerAncestralDiscreteScheduler,
-        ],
-        # feature_extractor: CLIPFeatureExtractor,
+        scheduler: Union[DDIMScheduler, PNDMScheduler, LMSDiscreteScheduler],
         device: torch.device,
         **kwargs,
     ):
+        super().__init__()
         self.vae = vae
         self.text_encoder = text_encoder
         self.tokenizer = tokenizer
@@ -65,24 +60,26 @@ class Img2ImgPipeline:
         self.text_encoder.to(torch_device)
         return self
 
-    def enable_sequential_cpu_offload(self, gpu_id=0):
+    @property
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._execution_device
+    def _execution_device(self):
         r"""
-        Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
-        text_encoder, vae and safety checker have their state dicts saved to CPU and then are moved to a
-        `torch.device('meta') and loaded to GPU only when their specific submodule has its `forward` method called.
+        Returns the device on which the pipeline's models will be executed. After calling
+        `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
+        hooks.
         """
-        if is_accelerate_available():
-            from accelerate import cpu_offload
-        else:
-            raise ImportError(
-                "Please install accelerate via `pip install accelerate`")
+        if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
+            return self.device
+        for module in self.unet.modules():
+            if (
+                hasattr(module, "_hf_hook")
+                and hasattr(module._hf_hook, "execution_device")
+                and module._hf_hook.execution_device is not None
+            ):
+                return torch.device(module._hf_hook.execution_device)
+        return self.device
 
-        device = torch.device(f"cuda:{gpu_id}")
-
-        for cpu_offloaded_model in [self.unet, self.text_encoder, self.vae]:
-            if cpu_offloaded_model is not None:
-                cpu_offload(cpu_offloaded_model, device)
-
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._encode_prompt
     def _encode_prompt(self, prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt):
         r"""
         Encodes the prompt into text encoder hidden states.
@@ -193,14 +190,7 @@ class Img2ImgPipeline:
 
         return text_embeddings
 
-    def decode_latents(self, latents):
-        latents = 1 / 0.18215 * latents
-        image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
-        image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-        return image
-
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_extra_step_kwargs
     def prepare_extra_step_kwargs(self, generator, eta):
         # prepare extra kwargs for the scheduler step, since not all schedulers have the same signature
         # eta (η) is only used with the DDIMScheduler, it will be ignored for other schedulers.
@@ -220,14 +210,24 @@ class Img2ImgPipeline:
             extra_step_kwargs["generator"] = generator
         return extra_step_kwargs
 
-    def check_inputs(self, prompt, strength, callback_steps):
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.decode_latents
+    def decode_latents(self, latents):
+        latents = 1 / 0.18215 * latents
+        image = self.vae.decode(latents).sample
+        image = (image / 2 + 0.5).clamp(0, 1)
+        # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
+        image = image.cpu().permute(0, 2, 3, 1).float().numpy()
+        return image
+
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.check_inputs
+    def check_inputs(self, prompt, height, width, callback_steps):
         if not isinstance(prompt, str) and not isinstance(prompt, list):
             raise ValueError(
                 f"`prompt` has to be of type `str` or `list` but is {type(prompt)}")
 
-        if strength < 0 or strength > 1:
+        if height % 8 != 0 or width % 8 != 0:
             raise ValueError(
-                f"The value of strength should in [1.0, 1.0] but is {strength}")
+                f"`height` and `width` have to be divisible by 8 but are {height} and {width}.")
 
         if (callback_steps is None) or (
             callback_steps is not None and (not isinstance(
@@ -238,59 +238,75 @@ class Img2ImgPipeline:
                 f" {type(callback_steps)}."
             )
 
-    def prepare_latents(self, init_image, timestep, batch_size, num_images_per_prompt, dtype, device, generator=None):
-        init_image = init_image.to(device=device, dtype=dtype)
-        init_latent_dist = self.vae.encode(init_image).latent_dist
-        init_latents = init_latent_dist.sample(generator=generator)
-        init_latents = 0.18215 * init_latents
-
-        if batch_size > init_latents.shape[0] and batch_size % init_latents.shape[0] == 0:
-            raise Exception(f"You have passed {batch_size} text prompts (`prompt`), but only {init_latents.shape[0]} initial"
-                            " images (`init_image`). Initial images are now duplicating to match the number of text prompts. Note"
-                            " that this behavior is deprecated and will be removed in a version 1.0.0. Please make sure to update"
-                            " your script to pass as many init images as text prompts to suppress this warning.")
-        elif batch_size > init_latents.shape[0] and batch_size % init_latents.shape[0] != 0:
-            raise ValueError(
-                f"Cannot duplicate `init_image` of batch size {init_latents.shape[0]} to {batch_size} text prompts."
-            )
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_latents
+    def prepare_latents(self, batch_size, num_channels_latents, height, width, dtype, device, generator, latents=None):
+        shape = (batch_size, num_channels_latents, height // 8, width // 8)
+        if latents is None:
+            if device.type == "mps":
+                # randn does not work reproducibly on mps
+                latents = torch.randn(
+                    shape, generator=generator, device="cpu", dtype=dtype).to(device)
+            else:
+                latents = torch.randn(
+                    shape, generator=generator, device=device, dtype=dtype)
         else:
-            init_latents = torch.cat(
-                [init_latents] * num_images_per_prompt, dim=0)
+            if latents.shape != shape:
+                raise ValueError(
+                    f"Unexpected latents shape, got {latents.shape}, expected {shape}")
+            latents = latents.to(device)
 
-        # add noise to latents using the timesteps
-        noise = torch.randn(init_latents.shape,
-                            generator=generator, device=device, dtype=dtype)
-
-        # get latents
-        init_latents = self.scheduler.add_noise(init_latents, noise, timestep)
-        latents = init_latents
-
+        # scale the initial noise by the standard deviation required by the scheduler
+        latents = latents * self.scheduler.init_noise_sigma
         return latents
 
-    def get_timesteps(self, num_inference_steps, strength, device):
-        # get the original timestep using init_timestep
-        offset = self.scheduler.config.get("steps_offset", 0)
-        init_timestep = int(num_inference_steps * strength) + offset
-        init_timestep = min(init_timestep, num_inference_steps)
+    def prepare_mask_latents(
+        self, mask, masked_image, batch_size, height, width, dtype, device, generator, do_classifier_free_guidance
+    ):
+        # resize the mask to latents shape as we concatenate the mask to the latents
+        # we do that before converting to dtype to avoid breaking in case we're using cpu_offload
+        # and half precision
+        mask = torch.nn.functional.interpolate(
+            mask, size=(height // 8, width // 8))
+        mask = mask.to(device=device, dtype=dtype)
 
-        t_start = max(num_inference_steps - init_timestep + offset, 0)
-        timesteps = self.scheduler.timesteps[t_start:]
+        masked_image = masked_image.to(device=device, dtype=dtype)
 
-        return timesteps
+        # encode the mask image into latents space so we can concatenate it to the latents
+        masked_image_latents = self.vae.encode(
+            masked_image).latent_dist.sample(generator=generator)
+        masked_image_latents = 0.18215 * masked_image_latents
+
+        # duplicate mask and masked_image_latents for each generation per prompt, using mps friendly method
+        mask = mask.repeat(batch_size, 1, 1, 1)
+        masked_image_latents = masked_image_latents.repeat(batch_size, 1, 1, 1)
+
+        mask = torch.cat([mask] * 2) if do_classifier_free_guidance else mask
+        masked_image_latents = (
+            torch.cat([masked_image_latents] *
+                      2) if do_classifier_free_guidance else masked_image_latents
+        )
+
+        # aligning device to prevent device errors when concating it with the latent model input
+        masked_image_latents = masked_image_latents.to(
+            device=device, dtype=dtype)
+        return mask, masked_image_latents
 
     @torch.no_grad()
     def __call__(
         self,
         prompt: Union[str, List[str]],
-        init_image: Union[torch.FloatTensor, PIL.Image.Image],
+        image: Union[torch.FloatTensor, PIL.Image.Image],
+        mask_image: Union[torch.FloatTensor, PIL.Image.Image],
         x_in, y_in, z_in, x_out, y_out, w_out, h_out,
-        strength: float = 0.8,
-        num_inference_steps: Optional[int] = 50,
-        guidance_scale: Optional[float] = 7.5,
+        height: int = 512,
+        width: int = 512,
+        num_inference_steps: int = 50,
+        guidance_scale: float = 7.5,
         negative_prompt: Optional[Union[str, List[str]]] = None,
         num_images_per_prompt: Optional[int] = 1,
-        eta: Optional[float] = 0.0,
+        eta: float = 0.0,
         generator: Optional[torch.Generator] = None,
+        latents: Optional[torch.FloatTensor] = None,
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
         callback: Optional[Callable[[
@@ -298,8 +314,9 @@ class Img2ImgPipeline:
         callback_steps: Optional[int] = 1,
         **kwargs,
     ):
+
         # 1. Check inputs
-        self.check_inputs(prompt, strength, callback_steps)
+        self.check_inputs(prompt, height, width, callback_steps)
 
         # 2. Define call parameters
         batch_size = 1 if isinstance(prompt, str) else len(prompt)
@@ -314,37 +331,65 @@ class Img2ImgPipeline:
             prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt
         )
 
-        # 4. Preprocess image
-        if isinstance(init_image, PIL.Image.Image):
-            original_width, original_height = init_image.size
-            init_image = fit_image(
-                init_image, x_in, y_in, z_in, x_out, y_out, w_out, h_out)
-            print('resized from', original_width,
-                  original_height, 'to', init_image.size)
-            # if width and height and (width, height) != init_image.size:
-            #     print('resizing')
-            # init_image = init_image.resize((width, height), PIL.Image.LANCZOS)
-            init_image = preprocess(init_image)
+        # 4. Preprocess mask and image
+        if isinstance(image, PIL.Image.Image) and isinstance(mask_image, PIL.Image.Image):
+            mask, masked_image = prepare_mask_and_masked_image(
+                image, mask_image)
 
         # 5. set timesteps
         self.scheduler.set_timesteps(num_inference_steps, device=device)
-        timesteps = self.get_timesteps(num_inference_steps, strength, device)
-        latent_timestep = timesteps[:1].repeat(
-            batch_size * num_images_per_prompt)
+        timesteps_tensor = self.scheduler.timesteps
 
         # 6. Prepare latent variables
+        num_channels_latents = self.vae.config.latent_channels
         latents = self.prepare_latents(
-            init_image, latent_timestep, batch_size, num_images_per_prompt, text_embeddings.dtype, device, generator
+            batch_size * num_images_per_prompt,
+            num_channels_latents,
+            height,
+            width,
+            text_embeddings.dtype,
+            device,
+            generator,
+            latents,
         )
 
-        # 7. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
+        # 7. Prepare mask latent variables
+        mask, masked_image_latents = self.prepare_mask_latents(
+            mask,
+            masked_image,
+            batch_size * num_images_per_prompt,
+            height,
+            width,
+            text_embeddings.dtype,
+            device,
+            generator,
+            do_classifier_free_guidance,
+        )
+
+        # 8. Check that sizes of mask, masked image and latents match
+        num_channels_mask = mask.shape[1]
+        num_channels_masked_image = masked_image_latents.shape[1]
+        # if num_channels_latents + num_channels_mask + num_channels_masked_image != self.unet.config.in_channels:
+        #     raise ValueError(
+        #         f"Incorrect configuration settings! The config of `pipeline.unet`: {self.unet.config} expects"
+        #         f" {self.unet.config.in_channels} but received `num_channels_latents`: {num_channels_latents} +"
+        #         f" `num_channels_mask`: {num_channels_mask} + `num_channels_masked_image`: {num_channels_masked_image}"
+        #         f" = {num_channels_latents+num_channels_masked_image+num_channels_mask}. Please verify the config of"
+        #         " `pipeline.unet` or your `mask_image` or `image` input."
+        #     )
+
+        # 9. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-        # 8. Denoising loop
-        for i, t in enumerate(tqdm(timesteps)):
+        # 10. Denoising loop
+        for i, t in enumerate(tqdm(timesteps_tensor)):
             # expand the latents if we are doing classifier free guidance
             latent_model_input = torch.cat(
                 [latents] * 2) if do_classifier_free_guidance else latents
+            # concat latents, mask, masked_image_latents in the channel dimension
+            latent_model_input = torch.cat(
+                [latent_model_input, mask, masked_image_latents], dim=1)
+
             latent_model_input = self.scheduler.scale_model_input(
                 latent_model_input, t)
 
@@ -366,10 +411,10 @@ class Img2ImgPipeline:
             if callback is not None and i % callback_steps == 0:
                 callback(i, t, latents)
 
-        # 9. Post-processing
+        # 11. Post-processing
         image = self.decode_latents(latents)
 
-        # 10. Convert to PIL
+        # 12. Convert to PIL
         if output_type == "pil":
             image = numpy_to_pil(image)
 
@@ -378,12 +423,12 @@ class Img2ImgPipeline:
     @staticmethod
     def create_pipeline(opt):
         vae = load_vae(opt)
-        unet = load_unet(opt)
+        unet = load_unet(opt, path=opt.inpaint_cache_path)
         scheduler = load_scheduler(opt)
         tokenizer = load_tokenizer(opt)
         text_encoder = load_text_encoder(opt)
         device = torch.device(opt.device)
-        return Img2ImgPipeline(
+        return InpaintPipeline(
             unet=unet,
             vae=vae,
             scheduler=scheduler,
@@ -391,3 +436,23 @@ class Img2ImgPipeline:
             text_encoder=text_encoder,
             device=device,
         )
+
+    @staticmethod
+    def create_modded_pipeline(opt):
+        pipe2 = StableDiffusionInpaintPipeline.from_pretrained(
+            opt.inpaint_cache_path,
+            torch_dtype=torch.float16,
+        ).to('cuda')
+        # pipe.safety_checker = lambda images, **kwargs: (images, False)
+        tokenizer = load_tokenizer(opt)
+        text_encoder = load_text_encoder(opt)
+        device = torch.device(opt.device)
+        pipe = InpaintPipeline(
+            device=device,
+            unet=pipe2.unet,
+            vae=pipe2.vae,
+            scheduler=pipe2.scheduler,
+            tokenizer=tokenizer,
+            text_encoder=text_encoder,
+        )
+        return pipe

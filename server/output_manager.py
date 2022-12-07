@@ -19,7 +19,6 @@ def make_output_dir():
         os.makedirs(op_path, exist_ok=True)
 
 
-
 def num_with_ext(path, ext):
     return len([f for f in os.listdir(path) if f.endswith(ext)])
 
@@ -27,8 +26,10 @@ def num_with_ext(path, ext):
 def get_op_path(op):
     return os.path.join(output_path, op)
 
+
 def prefix_str(idx):
     return f"{idx:05d}"
+
 
 def idx_name(op, idx, ext=None):
     # open the directory and load list of all .png files
@@ -47,8 +48,10 @@ def idx_name(op, idx, ext=None):
         return prefix_str(prefix)
     return f"{prefix_str(prefix)}.{ext}"
 
+
 def job_to_start_idx(op, job_id):
-    name_ids = [int(f.split('.')[0]) for f in os.listdir(get_op_path(op)) if f.endswith('.png')]
+    name_ids = [int(f.split('.')[0])
+                for f in os.listdir(get_op_path(op)) if f.endswith('.png')]
     return len([i for i in name_ids if i < job_id])
 
 
@@ -60,13 +63,6 @@ def save_img(img, opt, **kwargs):
     prefix = idx_name(op, idx)
     print('saving new image', idx, prefix)
     img.save(os.path.join(op_path, prefix+'.png'))
-    # add to meta:
-    # currently, num_images_per_prompt
-    # want total job size (num_images_per_prompt -> num_batches -> num_configs)
-    # job_size
-    # idx_in_job
-    # cf_idx_in_job
-    # idx_in_cf
     meta = {k: v for k, v in kwargs.items()}
     for k in op_opt_keys[opt.context]:
         meta[k] = getattr(opt, k)
@@ -88,6 +84,7 @@ def load_img(idx, op):
     # meta['name_id'] = name_id
     # meta['job_id'] = name_id - meta['idx_in_job']
     return img, meta, idx
+
 
 def delete_image(idx, op):
     assert op in ops

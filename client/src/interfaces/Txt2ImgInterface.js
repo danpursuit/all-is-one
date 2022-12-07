@@ -16,9 +16,10 @@ import { setTip } from '../actions';
 import PromptHelp from '../components/PromptHelp';
 import SubmitButt from '../components/SubmitButt';
 import UndoRedo from '../components/UndoRedo';
+import { TXT2IMG } from '../constants/features';
 
 const optNames = txt2imgOpts;
-const op = 'txt2img';
+const op = TXT2IMG;
 const Txt2ImgInterface = () => {
   const dispatch = useDispatch();
   const ws = React.useContext(WebSocketContext);

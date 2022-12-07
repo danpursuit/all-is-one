@@ -1,8 +1,10 @@
 const schedulerDict = {
+    dpm: 'DPM',
     euler: 'Euler',
     euler_ancestral: 'Euler Ancestral',
     lms: 'LMS',
-    pndm: 'PNDM',
+    plms: 'PLMS',
+    ddim: 'DDIM',
 }
 
 // create list

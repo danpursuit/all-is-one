@@ -7,13 +7,16 @@ import GridOnOutlinedIcon from '@mui/icons-material/GridOnOutlined';
 import GridOnTwoToneIcon from '@mui/icons-material/GridOnTwoTone';
 import CircularProgress from '@mui/material/CircularProgress';
 import ClearIcon from '@mui/icons-material/Clear';
-
+import SendIcon from '@mui/icons-material/Send';
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
+
 import { WebSocketContext } from '../WebSocket';
-import { SET_CURRENT_IMAGE, SET_BATCH_OPTIONS, DELETE_SINGLE_IMAGE, DELETE_BATCH } from '../constants/actionTypes';
-import { CONFIRM_DELETE, CONFIRM_DELETE_BATCH, MIRROR, SHOW_BATCH } from '../constants/features';
+import { SET_CURRENT_IMAGE, SET_BATCH_OPTIONS, DELETE_SINGLE_IMAGE, DELETE_BATCH, SET_BATCH_OPTION, SET_LOCATION } from '../constants/actionTypes';
+import { CONFIRM_DELETE, CONFIRM_DELETE_BATCH, IMG2IMG, MIRROR, SEND_TO_IMG2IMG, SHOW_BATCH } from '../constants/features';
 import { setTip } from '../actions';
+import { getImgSubDefaults, img2imgOpts } from '../constants/options';
+import { CopySettingsButt, DeleteButt, NavLabel, NextButt, PrevButt, SendToImgButt, ShowEntireJobButt, ShowFolderButt } from './GalleryButtons';
 
 const styles = {
     img: {
@@ -33,22 +36,22 @@ const styles = {
         boxSizing: 'border-box',
         border: '4px solid #0000ff',
     },
-    deleteMode0: {
+    deleteButt0: {
 
     },
-    deleteMode1: {
+    deleteButt1: {
         backgroundColor: 'red'
     }
 }
 const Gallery = ({ op, optNames }) => {
     const ws = React.useContext(WebSocketContext);
     const dispatch = useDispatch();
+    const options = useSelector(state => state.main.options);
     const data = useSelector(state => state.galleries.galleries[op]);
     const submitStatus = useSelector(state => state.main.submitStatus);
     const blankImg = useSelector(state => state.main.blanks.image);
     const [mirroring, setMirroring] = React.useState(false);
     const [showBatch, setShowBatch] = React.useState(false);
-    const [deleteMode, setDeleteMode] = React.useState(0);
 
     // have ws request data on init
     React.useEffect(() => {
@@ -70,20 +73,20 @@ const Gallery = ({ op, optNames }) => {
                 return;
             }
             // request all images in batch that don't exist
-            // const startIdx = data.currentImage - imgData.idx_in_job;
-            // const endIdx = startIdx + imgData.job_size;
-            const startIdx = data.batchMeta[jobId].start_idx;
-            const endIdx = data.batchMeta[jobId].end_idx;
-            let requested = false;
-            for (let i = startIdx; i < endIdx; i++) {
-                if (data.imgData[i] === undefined) {
-                    ws.reqImageByIdx({ op, idx: i });
-                    requested = true;
-                }
-            }
-            if (requested) return;
+            // disabled now, since server should automatically send all images in batch
+            // const startIdx = data.batchMeta[jobId].start_idx;
+            // const endIdx = data.batchMeta[jobId].end_idx;
+            // let requested = false;
+            // for (let i = startIdx; i < endIdx; i++) {
+            //     if (i === data.currentImage) continue;
+            //     if (data.imgData[i] === undefined) {
+            //         ws.reqImageByIdx({ op, idx: i });
+            //         requested = true;
+            //     }
+            // }
+            // if (requested) return;
             if (mirroring) {
-                const optData = data.batchMeta[startIdx]
+                const optData = data.batchMeta[jobId]
                 const options = {};
                 Object.keys(optData).forEach(k => {
                     if (optNames[k]) { // some keys in imgData are not true options
@@ -130,31 +133,11 @@ const Gallery = ({ op, optNames }) => {
         let idx;
         if (showBatch && !mirroring && data.currentImage !== -1) {
             // go to last image of last batch
-            console.log(data.currentImage, data.imgData[data.currentImage].idx_in_job, data.imgData[data.currentImage].job_size);
             idx = (data.currentImage - data.imgData[data.currentImage].idx_in_job + data.imgData[data.currentImage].job_size) % data.numImages;
         } else {
             idx = (data.currentImage + 1 + data.numImages) % data.numImages;
         }
         dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx } });
-    }
-    const tryDeleteImage = () => {
-        if (deleteMode === 0) {
-            setDeleteMode(1);
-            if (showBatch) {
-                dispatch(setTip(CONFIRM_DELETE_BATCH));
-            } else {
-                dispatch(setTip(CONFIRM_DELETE));
-            }
-            return;
-        } else if (deleteMode === 1) {
-            setDeleteMode(0);
-            if (showBatch) {
-                ws.deleteBatch({ op, idx: data.currentImage });
-            } else {
-                ws.deleteSingleImage({ op, idx: data.currentImage });
-            }
-            return;
-        }
     }
     // several display types:
     // no image (idx -1)
@@ -214,44 +197,16 @@ const Gallery = ({ op, optNames }) => {
                 }
             </Card>
             <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-                <IconButton disabled={data.numImages <= 0 || submitStatus.inProgress}
-                    onClick={tryDeleteImage} sx={styles['deleteButt' + deleteMode]}
-                    onMouseEnter={() => {
-                        if (deleteMode === 0) {
-                            dispatch(setTip(showBatch ? DELETE_BATCH : DELETE_SINGLE_IMAGE))
-                        }
-                    }}>
-                    <ClearIcon />
-                </IconButton>
-                <Checkbox
-                    onMouseEnter={() => dispatch(setTip(MIRROR))}
-                    checked={mirroring}
-                    onClick={() => setMirroring(!mirroring)}
-                    icon={<FileCopyOutlinedIcon />}
-                    checkedIcon={<FileCopyTwoToneIcon />} />
-                <IconButton disabled={data.numImages <= 0} onClick={prevImage}>
-                    <NavigateBeforeIcon />
-                </IconButton>
-                <Stack direction="row" spacing={1} alignItems="center">
-                    <TextField value={data.currentImage + 1} onChange={e => {
-                        const idx = parseInt(e.target.value) - 1;
-                        if (idx >= 0 && idx < data.numImages) {
-                            dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx } });
-                        }
-                    }} sx={{ width: data.numImages > 999 ? '5em' : '4em' }} size='small' />
-                    <Typography>of {data.numImages}</Typography>
-                </Stack>
-                <IconButton disabled={data.numImages <= 0} onClick={nextImage}>
-                    <NavigateNextIcon />
-                </IconButton>
-                <Checkbox
-                    onMouseEnter={() => dispatch(setTip(SHOW_BATCH))}
-                    checked={showBatch}
-                    onClick={() => setShowBatch(!showBatch)}
-                    icon={<GridOnOutlinedIcon />}
-                    checkedIcon={<GridOnTwoToneIcon />} />
+                <DeleteButt ws={ws} data={data} op={op} submitStatus={submitStatus} showBatch={showBatch} />
+                <CopySettingsButt mirroring={mirroring} setMirroring={setMirroring} />
+                <PrevButt disabled={data.numImages <= 0} onClick={prevImage} />
+                <NavLabel data={data} op={op} />
+                <NextButt disabled={data.numImages <= 0} onClick={nextImage} />
+                <ShowEntireJobButt showBatch={showBatch} setShowBatch={setShowBatch} />
+                <ShowFolderButt ws={ws} op={op} />
+                <SendToImgButt data={data} />
             </Stack>
-        </Stack>
+        </Stack >
     )
 }
 

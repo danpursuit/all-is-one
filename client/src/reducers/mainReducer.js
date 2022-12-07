@@ -1,5 +1,5 @@
-import { IMG_UPLOAD, IMG_RESULT, ADD_IMAGE, INIT_BATCH_OPTION, SET_BATCH_OPTION, SET_BATCH_OPTIONS, UNDO, REDO, SUBMIT_START, IN_PROGRESS_START, INTERRUPTED, SET_LOCATION } from "../constants/actionTypes";
-import { IMG2IMG } from "../constants/features";
+import { READ_WELCOME, SET_DOWNLOADING_MODEL, RCV_MODEL_DATA, IMG_UPLOAD, IMG_RESULT, ADD_IMAGE, INIT_BATCH_OPTION, SET_BATCH_OPTION, SET_BATCH_OPTIONS, UNDO, REDO, SUBMIT_START, IN_PROGRESS_START, INTERRUPTED, SET_LOCATION, SET_MODEL } from "../constants/actionTypes";
+import { EMPTY_MODEL, IMG2IMG, SELECT_MODEL, TXT2IMG } from "../constants/features";
 // import blank.png
 import blank from "../images/blank.png";
 
@@ -14,17 +14,24 @@ const initialSubmitStatus = {
     op: null
 }
 const initialState = {
-    uploads: {
-        [IMG2IMG]: null
-    },
-    results: {
-        [IMG2IMG]: null
-    },
+    welcome: false,
     blanks: {
         image: blank
     },
     options: {
 
+    },
+    models: {
+        models: {
+            regular: null,
+            inpainting: null,
+            regularChoice: EMPTY_MODEL,
+            inpaintingChoice: EMPTY_MODEL,
+            outpaintingChoice: EMPTY_MODEL,
+        },
+        ckpts: null,
+        downloads: null,
+        downloading: null,
     },
     panel: 0,
     history: [],
@@ -33,13 +40,55 @@ const initialState = {
     submitStatus: {
         ...initialSubmitStatus
     },
-    location: 'txt2img'
+    preset: null,
+    location: TXT2IMG,
+    welcome: false,
+    readWelcome: false
 }
 export default (state = initialState, action) => {
     let history, prevState;
     try {
         // console.log('action', action.type);
         switch (action.type) {
+            case RCV_MODEL_DATA:
+                const welcome = !state.readWelcome && action.payload.models.regularChoice === EMPTY_MODEL;
+                return {
+                    ...state,
+                    models: { ...state.models, ...action.payload },
+                    welcome,
+                    location: welcome ? SELECT_MODEL : state.location,
+                }
+            // return {
+            //     ...state,
+            //     models: {
+            //         ...state.models,
+            //         models: {
+            //             ...state.models.models,
+            //             ...action.payload
+            //         }
+            //     },
+            //     welcome,
+            //     location: welcome ? SELECT_MODEL : state.location
+            // }
+            case SET_MODEL:
+                return {
+                    ...state,
+                    models: {
+                        ...state.models,
+                        models: {
+                            ...state.models.models,
+                            ...action.payload
+                        }
+                    }
+                }
+            case SET_DOWNLOADING_MODEL:
+                return {
+                    ...state,
+                    models: {
+                        ...state.models,
+                        downloading: action.payload.name
+                    }
+                }
             case IMG_UPLOAD:
                 return {
                     ...state,
@@ -79,7 +128,7 @@ export default (state = initialState, action) => {
                     const lastStep = history[history.length - 1];
                     // if it is the same option (and makes sense to do so), update last history instead of pushing new one
                     if (lastStep !== undefined && lastStep.type === action.type && lastStep.nextState.name === action.payload.name && lastStep.nextState.idx === action.payload.idx
-                        && history.length === state.history.length) {
+                        && history.length === state.history.length && lastStep.nextState.subOption === action.payload.subOption) {
                         newStep.prevState = history[history.length - 1].prevState
                         history[history.length - 1] = newStep;
                     } else {
@@ -93,6 +142,7 @@ export default (state = initialState, action) => {
                             ...state.options,
                             [action.payload.name]: action.payload
                         },
+                        preset: null,
                     }
                 }
                 return state
@@ -210,10 +260,15 @@ export default (state = initialState, action) => {
                 }
                 return state
             case SET_LOCATION:
-                console.log('set location', action.payload);
                 return {
                     ...state,
-                    location: action.payload.location
+                    location: action.payload.location,
+                    preset: action.payload.preset ? action.payload.preset : state.preset
+                }
+            case READ_WELCOME:
+                return {
+                    ...state,
+                    readWelcome: true
                 }
             default:
                 return state;

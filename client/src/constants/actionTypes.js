@@ -28,3 +28,9 @@ export const SET_TIP = 'SET_TIP';
 
 // location
 export const SET_LOCATION = 'SET_LOCATION';
+
+// model management
+export const RCV_MODEL_DATA = 'RCV_MODEL_DATA';
+export const SET_MODEL = 'SET_MODEL';
+export const SET_DOWNLOADING_MODEL = 'SET_DOWNLOADING_MODEL';
+export const READ_WELCOME = 'READ_WELCOME';

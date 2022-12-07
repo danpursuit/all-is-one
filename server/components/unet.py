@@ -1,9 +1,11 @@
 from diffusers import UNet2DConditionModel
 
 
-def load_unet(opt):
+def load_unet(opt, path=None):
+    path = path or opt.model_cache_path
+    print('loading path', path)
     return UNet2DConditionModel.from_pretrained(
-        opt.model_cache_path,
+        path,
         subfolder='unet',
         torch_dtype=opt.dtype,
     )

@@ -17,9 +17,10 @@ import PromptHelp from '../components/PromptHelp';
 import SubmitButt from '../components/SubmitButt';
 import UndoRedo from '../components/UndoRedo';
 import ImageUpload from '../components/ImageUpload';
+import { IMG2IMG } from '../constants/features';
 
 const optNames = img2imgOpts;
-const op = 'img2img';
+const op = IMG2IMG;
 const Img2ImgInterface = () => {
   const dispatch = useDispatch();
   const ws = React.useContext(WebSocketContext);
@@ -38,13 +39,11 @@ const Img2ImgInterface = () => {
         count_negative_prompt: options[optNames.negative_prompt].values.length,
         count_guidance_scale: options[optNames.guidance_scale].values.length,
         count_num_inference_steps: options[optNames.num_inference_steps].values.length,
-        count_height: options[optNames.height].values.length,
-        count_width: options[optNames.width].values.length,
         count_seed: options[optNames.seed].values.length,
         count_scheduler_class: options[optNames.scheduler_class].values.length,
       }
       newInfo.num_quick_images = newInfo.num_batches * newInfo.num_images_per_prompt;
-      newInfo.num_procedural_batches = newInfo.count_init_images * newInfo.count_strength * newInfo.count_prompt * newInfo.count_negative_prompt * newInfo.count_guidance_scale * newInfo.count_num_inference_steps * newInfo.count_height * newInfo.count_width * newInfo.count_seed * newInfo.count_scheduler_class;
+      newInfo.num_procedural_batches = newInfo.count_init_images * newInfo.count_strength * newInfo.count_prompt * newInfo.count_negative_prompt * newInfo.count_guidance_scale * newInfo.count_num_inference_steps * newInfo.count_seed * newInfo.count_scheduler_class;
       newInfo.num_procedural_images = newInfo.num_procedural_batches * newInfo.num_quick_images;
       setInfo(newInfo);
     }
@@ -59,10 +58,6 @@ const Img2ImgInterface = () => {
           <BatchOptionSlider name={optNames.guidance_scale} label='Prompt Weight' defaultValue={6} min={1} max={20} step={0.5} />
           <BatchOptionSlider name={optNames.strength} label='Denoising Strength' defaultValue={0.4} min={0.1} max={1.0} step={0.01} />
           <BatchOptionSlider name={optNames.num_inference_steps} label='Inference Steps' defaultValue={20} min={1} max={150} step={1} />
-          <Stack direction="row" spacing={2} justifyContent="space-evenly">
-            <BatchOptionSlider name={optNames.height} label='Height' defaultValue={512} min={32} max={2048} step={32} />
-            <BatchOptionSlider name={optNames.width} label='Width' defaultValue={512} min={32} max={2048} step={32} />
-          </Stack>
         </Stack>
       </Grid>
       <Grid item xs={12} md={6}>

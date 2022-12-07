@@ -3,7 +3,7 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import io from 'socket.io-client';
-import { INTERRUPTED, IMG_RESULT, DELETE_SINGLE_IMAGE, DELETE_BATCH, ADD_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, IN_PROGRESS_START } from './constants/actionTypes';
+import { SET_DOWNLOADING_MODEL, INTERRUPTED, IMG_RESULT, DELETE_SINGLE_IMAGE, DELETE_BATCH, ADD_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, IN_PROGRESS_START, RCV_MODEL_DATA } from './constants/actionTypes';
 import baseURL from './constants/url';
 import { txt2imgNames, txt2imgOpts, img2imgNames, img2imgOpts } from './constants/options';
 
@@ -60,6 +60,7 @@ export default ({ children }) => {
         socket.emit('img2imgProcedural', { options: opts });
     }
     const reqImageByIdx = ({ op, idx }) => {
+        console.log('reqImageByIdx', op, idx);
         socket.emit('reqImageByIdx', { op, idx });
     }
     const reqNumImages = ({ op }) => {
@@ -67,7 +68,6 @@ export default ({ children }) => {
     }
     const reqBatchMeta = ({ op, jobId }) => {
         // request metadata for the entire batch, idx=startIdx
-        console.log('reqBatchMeta', op, jobId);
         socket.emit('reqBatchMeta', { op, jobId });
     }
     const interrupt = ({ op }) => {
@@ -78,6 +78,33 @@ export default ({ children }) => {
     }
     const deleteBatch = ({ op, idx }) => {
         socket.emit('deleteBatch', { op, idx });
+    }
+    // const reqCacheModels = () => {
+    //     socket.emit('reqCacheModels');
+    // }
+    // const reqCkpts = () => {
+    //     socket.emit('reqCkpts');
+    // }
+    const reqModelData = () => {
+        socket.emit('reqModelData');
+    }
+    const saveModelChoices = ({ regularChoice, inpaintingChoice, outpaintingChoice }) => {
+        socket.emit('saveModelChoices', { regularChoice, inpaintingChoice, outpaintingChoice });
+    }
+    const downloadModel = ({ name }) => {
+        dispatch({ type: SET_DOWNLOADING_MODEL, payload: { name } });
+        socket.emit('downloadModel', { name });
+    }
+    const downloadByRepoId = ({ saveName, repoId }) => {
+        dispatch({ type: SET_DOWNLOADING_MODEL, payload: { name: saveName } });
+        socket.emit('downloadByRepoId', { save_name: saveName, repo_id: repoId });
+    }
+    const convertCkpt = ({ saveName, ckptName, inpainting }) => {
+        dispatch({ type: SET_DOWNLOADING_MODEL, payload: { name: saveName } });
+        socket.emit('convertCkpt', { save_name: saveName, ckpt_name: ckptName, inpainting });
+    }
+    const showFolder = ({ location }) => {
+        socket.emit('showFolder', { location });
     }
     if (!socket) {
         console.log('connecting');
@@ -189,6 +216,24 @@ export default ({ children }) => {
                     payload: { op, idx: jobId, meta }
                 })
             })
+            // socket.on('cacheModels', (payload) => {
+            //     dispatch({
+            //         type: RCV_CACHE_MODELS,
+            //         payload
+            //     })
+            // })
+            // socket.on('localCkpts', ({ ckpts }) => {
+            //     dispatch({
+            //         type: RCV_LOCAL_CKPTS,
+            //         payload: { ckpts }
+            //     })
+            // })
+            socket.on('modelData', (payload) => {
+                dispatch({
+                    type: RCV_MODEL_DATA,
+                    payload
+                })
+            })
             // //generic
             // socket.on('fail', (msg) => {
             //     console.log('fail from server', msg);
@@ -213,7 +258,13 @@ export default ({ children }) => {
             submitQuick,
             interrupt,
             deleteSingleImage,
-            deleteBatch
+            deleteBatch,
+            reqModelData,
+            saveModelChoices,
+            downloadModel,
+            downloadByRepoId,
+            convertCkpt,
+            showFolder
         }
 
         return (

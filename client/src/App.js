@@ -9,6 +9,8 @@ import Txt2ImgInterface from './interfaces/Txt2ImgInterface';
 import Img2ImgInterface from './interfaces/Img2ImgInterface';
 import Navbar from './components/Navbar';
 import { useSelector } from 'react-redux';
+import { IMG2IMG, TXT2IMG, SELECT_MODEL } from './constants/features';
+import SelectModelInterface from './interfaces/SelectModelInterface';
 
 function Copyright() {
   return (
@@ -36,7 +38,7 @@ export default function App() {
     ws.ping({ steps });
   }
   return (
-    <Container>
+    <Container maxWidth={false}>
       {/* <Box sx={{ my: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           Create React App example
@@ -47,8 +49,9 @@ export default function App() {
         <Copyright />
       </Box> */}
       <Navbar />
-      {location === 'txt2img' && <Txt2ImgInterface />}
-      {location === 'img2img' && <Img2ImgInterface />}
+      {location === TXT2IMG && <Txt2ImgInterface />}
+      {location === IMG2IMG && <Img2ImgInterface />}
+      {location === SELECT_MODEL && <SelectModelInterface />}
     </Container>
   );
 }

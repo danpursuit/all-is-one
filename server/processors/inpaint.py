@@ -6,18 +6,18 @@ from PIL import Image
 
 import opts
 import control
-from pipelines.img2img_pipeline import Img2ImgPipeline
-from pipelines.pipe_wrapper import create_img2img_pipeline, create_inpaint_pipeline, create_outpaint_pipeline
-from scripts.utils import bytes_to_pil, fit_image, scale_image, prep_client_mask, merge_masks, prep_outpaint_mask
+from pipelines.inpaint_pipeline import InpaintPipeline
+from pipelines.pipe_wrapper import create_inpaint_pipeline
+from scripts.utils import bytes_to_pil, fit_image, scale_image
 from output_manager import save_img
-from constants import EMPTY_MODEL
+from diffusers import StableDiffusionInpaintPipeline
 
 
 def step_callback(step: int, timestep: int, latents: torch.FloatTensor):
     print(f"Step {step} Timestep {timestep} Latents {latents.shape}")
 
 
-def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0, job_size=0):
+def process_inpaint(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0, job_size=0):
     opt = opts.set_opts(opts.global_opts, opts.img2img_opts, overrides)
     x_in = opt.img['x_in']
     y_in = opt.img['y_in']
@@ -26,48 +26,26 @@ def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
     y_out = opt.img['y_out']
     w_out = opt.img['w_out']
     h_out = opt.img['h_out']
-
     original_img = scale_image(bytes_to_pil(opt.img['img']), z_in)
-    inpaint_mask = opt.img['mask']
-    outpaint = opt.img['outpaint']
-    if outpaint and opt.outpaintingChoice == EMPTY_MODEL:
-        print('Disabling outpainting because no outpaint model was selected')
-        outpaint = False
+    init_image, margins = fit_image(original_img, x_in, y_in, x_out,
+                                    y_out, w_out, h_out, fill=None)
+    # seed_everything(opt.seed)
 
-    if outpaint:
-        init_image, outpaint_mask = prep_outpaint_mask(original_img, opt)
-    else:
-        init_image, margins = fit_image(original_img, x_in, y_in, x_out,
-                                        y_out, w_out, h_out, fill=None)
-        outpaint_mask = None
-
-    # create final mask
-    if inpaint_mask:
-        inpaint_mask = prep_client_mask(inpaint_mask)
-        old = opt.inpaintingChoice == EMPTY_MODEL
-        print('img2img inpainting:', 'legacy' if old else 'fine-tuned')
-        if outpaint_mask:
-            print('img2img also outpainting')
-            mask = merge_masks(inpaint_mask, outpaint_mask)
-            pipe = create_outpaint_pipeline(opt)
-        else:
-            print('inpainting only')
-            mask = inpaint_mask
-            pipe = create_inpaint_pipeline(opt, old=old)
-    elif outpaint_mask:
-        print('img2img outpainting only')
-        mask = outpaint_mask
-        pipe = create_outpaint_pipeline(opt)
-    else:
-        print('img2img inpainting/outpainting: false')
-        pipe = create_img2img_pipeline(opt)
-        mask = None
+    # pipe = InpaintPipeline.create_pipeline(opt).to('cuda')
+    # pipe = InpaintPipeline.create_modded_pipeline(opt).to('cuda')
+    pipe = create_inpaint_pipeline(opt)
 
     generator = torch.Generator('cuda').manual_seed(opt.seed)
     idx_in_cf = 0
     for n in trange(opt.num_batches, desc="Batches"):
         if control.interrupt:
             break
+        # create dummy mask
+        mask = Image.new(
+            'RGB', (opt.img['w_out'], opt.img['h_out']), (255, 255, 255))
+        black_mask = Image.new(
+            'RGB', (opt.img['w_out']//2, opt.img['h_out']), (0, 0, 0))
+        mask.paste(black_mask, (0, 0))
         output = pipe(
             prompt=opt.prompt,
             strength=opt.strength,
@@ -99,4 +77,4 @@ def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
 
 
 if __name__ == "__main__":
-    process_img2img()
+    process_inpaint()

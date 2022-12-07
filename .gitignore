@@ -2,6 +2,7 @@ server/test.png
 .DS_Store
 server/repositories/
 *.ckpt
+server/local.config
 cache/
 server/src/
 server/outputs/
