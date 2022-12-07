@@ -29,11 +29,7 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 - conda activate ai1
 - get token from https://huggingface.co/settings/tokens
 - create .env file in the server/ folder with "HF_TOKEN=[your_token]"
-- ~~python setup.py (no longer needed, go to Select Model in the UI to download/configure models)
-    - this downloads the base model from huggingface. if you have your own .ckpt, you can convert that to the huggingface compatible model with
-    - python scripts/sd_to_diffusers.py --checkpoint_path [path to your model, i.e. models/model.ckpt] --original_config_file models/v1-inference.yaml --scheduler_type ddim --dump_path cache/[converted_model_name]
-    - then in opts.py, change "model_cache_path='cache/sd'" to "model_cache_path='cache/[converted_model_name]',"
-    - https://rentry.org/sdmodels has some better models to start with. Download one then convert it.~~
+- ~~python setup.py~~ (no longer needed, go to Select Model in the UI to download/convert models)
 - python server.py
     - leave this running in the background
 - go to http://localhost:5050/
