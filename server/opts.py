@@ -27,7 +27,7 @@ global_opts_dict.update(dict(
     context="global",
     outpath="outputs",
 ))
-print('global_opts_dict', global_opts_dict)
+# print('global_opts_dict', global_opts_dict)
 
 
 def save_defaults(data):

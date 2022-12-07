@@ -9,6 +9,8 @@ from convert_checkpoint import convert_checkpoint
 
 cache_path = os.path.join(os.path.dirname(__file__), 'cache')
 ckpt_path = os.path.join(os.path.dirname(__file__), 'models')
+for path in [cache_path, ckpt_path]:
+    os.makedirs(path, exist_ok=True)
 
 
 def get_model_path(model_name):
@@ -22,7 +24,7 @@ def get_model_path(model_name):
 def get_cache_models():
     dirs = [f for f in os.listdir(cache_path) if os.path.isdir(
         os.path.join(cache_path, f))]
-    print('opts', opts.global_opts)
+    # print('opts', opts.global_opts)
     return {
         'regular': [EMPTY_MODEL] + [f for f in dirs if not f.endswith('inpainting')],
         'inpainting': [EMPTY_MODEL] + [f for f in dirs if f.endswith('inpainting')],

@@ -19,6 +19,7 @@ import output_manager as om
 from output_manager import make_output_dir, num_with_ext, get_op_path, load_img, idx_name, delete_image, prefix_str
 import model_finder as mf
 
+print('Server starting...')
 make_output_dir()
 
 app = Flask(__name__, static_url_path='')
@@ -289,5 +290,8 @@ def show_folder(data):
 
 
 if __name__ == '__main__':
+    port = 5050
+    print('Starting server on port', port)
+    print('Go to http://localhost:'+str(port)+'/ in your browser!')
     # socketio.run(app, debug=True, port=5050)
     socketio.run(app, debug=False, port=5050)
