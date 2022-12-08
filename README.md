@@ -21,6 +21,14 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 - Model Manager lets you download diffusers models and convert .ckpt files straight from your UI
 <img src="sample/model_manager.jpg" alt="models" title="models" width="600" height="268" />
 
+- Support for inpainting and outpainting
+
+<p float="left">
+<img src="sample/inpainting_work.jpg" alt="inpainting" title="inpainting" width="250" height="232" />
+<img src="sample/inpainting_res.jpg" alt="Inpainting Result" title="Inpainting Result" width="300" height="120" />
+<img src="sample/outpainting_res.jpg" alt="Outpainting Result" title="Outpainting Result" width="300" height="120" />
+</p>
+
 - Undo Redo functionality
 - Tips and Prompt Help buttons to assist new users
 
