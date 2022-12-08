@@ -23,8 +23,9 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 
 - Support for inpainting and outpainting
 
-<p float="left">
 <img src="sample/inpainting_work.jpg" alt="inpainting" title="inpainting" width="250" height="232" />
+
+<p float="left">
 <img src="sample/inpainting_res.jpg" alt="Inpainting Result" title="Inpainting Result" width="300" height="120" />
 <img src="sample/outpainting_res.jpg" alt="Outpainting Result" title="Outpainting Result" width="300" height="120" />
 </p>
