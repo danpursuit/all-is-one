@@ -18,6 +18,9 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 <img src="sample/d4_circled.JPG" alt="sample4" title="sample4" width="250" height="156" />
 </p>
 
+- Model Manager lets you download diffusers models and convert .ckpt files straight from your UI
+<img src="sample/model_manager.jpg" alt="models" title="models" width="600" height="268" />
+
 - Undo Redo functionality
 - Tips and Prompt Help buttons to assist new users
 
