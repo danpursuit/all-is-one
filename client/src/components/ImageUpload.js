@@ -18,18 +18,34 @@ import ImageSizer from './ImageSizer';
 import { imgSubOpts, imgSubNames, imgSubDefaults, getImgSubDefaults } from '../constants/options';
 import ConfigCanvas from './ConfigCanvas';
 import ImageUploadButtons from './ImageUploadButtons';
+import ResizerDrag from './ResizerDrag';
 
 // manages the image upload and associated subOptions
 // once image is uploaded, allows opening ConfigCanvas for inpainting/sizing
 
-const sizePx = 350
 const inSuffix = '_in';
 const outSuffix = '_out';
 const styles = {
-    container: {
-        position: 'relative', margin: 0, width: `${sizePx}px`, height: `${sizePx}px`,
-        // border: '1px solid black',
-        overflow: 'hidden', minWidth: `${sizePx}px`, minHeight: `${sizePx}px`
+    container: (sizePx) => {
+        return {
+            position: 'relative', margin: 0, width: `${sizePx}px`, height: `${sizePx}px`,
+            // border: '1px solid black',
+            overflow: 'hidden', minWidth: `${sizePx}px`, minHeight: `${sizePx}px`
+        }
+    },
+    resizer: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        height: '2rem',
+        width: '2rem',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        cursor: 'se-resize',
+        '&:hover': {
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            borderRight: '4px solid white',
+            borderBottom: '4px solid white',
+        }
     },
     formOuter: {
     },
@@ -64,6 +80,11 @@ const styles = {
 const defaultValue = null;
 const ImageUpload = ({ name }) => {
     const dispatch = useDispatch();
+    const [sizePx, setSizePx] = React.useState(350);
+    const [resizing, setResizing] = React.useState(false);
+    const containerRef = React.useRef(null);
+    const resizerRef = React.useRef(null);
+
     const blankImg = useSelector(state => state.main.blanks.image);
     const [hovered, setHovered] = React.useState(false);
     // on startup, dispatch to initialize values
@@ -99,6 +120,19 @@ const ImageUpload = ({ name }) => {
             newConfig.defaults[subName] = val;
         })
         setConfig(newConfig);
+    }
+
+    //resize
+    const handleResize = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const tl = containerRef.current.getBoundingClientRect();
+        // console.log('resize type', e.type, 'containerRef loc', containerRef.current.getBoundingClientRect());
+        // console.log('resizerRef loc', resizerRef.current.getBoundingClientRect());
+        const horiz = e.clientX - tl.x;
+        const vert = e.clientY - tl.y;
+        // console.log('horiz', horiz, 'vert', vert)
+        setSizePx(Math.max(horiz, vert));
     }
 
     // whenever disableSubmit is set to true, set a timer to set it back to false
@@ -245,9 +279,8 @@ const ImageUpload = ({ name }) => {
         }
     }
     return (
-        <Stack direction='row' spacing={1}>
-            {/* {data?.values[data.idx]?.mask} */}
-            <Box sx={styles.container} onMouseEnter={() => { dispatch(setTip(name)); setHovered(true) }}
+        <Stack direction='row' spacing={1} onMouseUp={() => setResizing(false)} onMouseMove={(e) => { if (resizing) { handleResize(e) } }}>
+            <Box ref={containerRef} sx={styles.container(sizePx)} onMouseEnter={() => { dispatch(setTip(name)); setHovered(true) }}
                 onMouseLeave={() => setHovered(false)}>
                 {data && <>
                     <form ref={uploadRef} onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()} style={{ ...styles.formOuter }}>
@@ -261,9 +294,10 @@ const ImageUpload = ({ name }) => {
                         </label>
                         {dragActive && <div style={styles.dragScreen} onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div>}
                     </form>
-                    {/* {data.values[data.idx] && <OutputCropper data={data} sizePx={sizePx} ref={imRef} suffix={outSuffix} />} */}
                     {(hovered || data.values.length > 1) && <BatchOptions data={data} defaultValue={defaultValue} />}
                 </>}
+                {/* <Box sx={styles.resizer} ref={resizerRef} onDragEnter={handleResize} onDragLeave={handleResize} onDragOver={handleResize} onDrop={handleResize} draggable /> */}
+                <ResizerDrag resizerRef={resizerRef} setResizing={setResizing} />
             </Box>
             {data && <>
                 <ImageUploadButtons target={data.values[data.idx]} clearImage={clearImage} resetOptions={resetOptions} enableCanvas={enableCanvas} />

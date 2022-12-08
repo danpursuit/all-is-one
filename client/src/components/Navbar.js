@@ -12,6 +12,7 @@ const Navbar = ({ }) => {
     const dispatch = useDispatch();
     const ws = React.useContext(WebSocketContext);
     const location = useSelector(state => state.main.location);
+    const regularModels = useSelector(state => state.main.models.models.regular);
     const regularChoice = useSelector(state => state.main.models.models.regularChoice);
     const welcome = useSelector(state => state.main.welcome);
     const readWelcome = useSelector(state => state.main.readWelcome);
@@ -33,9 +34,10 @@ const Navbar = ({ }) => {
                 />
                 <FormControlLabel value={IMG2IMG} control={<Radio />} label="Image2Image"
                     disabled={regularChoice === EMPTY_MODEL} />
-                <FormControlLabel value={SELECT_MODEL} control={<Radio />} label="Select Model" />
+                <FormControlLabel value={SELECT_MODEL} control={<Radio />} label="Select Model" disabled={regularModels === null} />
             </RadioGroup>
             {regularChoice === EMPTY_MODEL && <Box sx={{ color: 'red' }}>Please select a base model</Box>}
+            {regularModels === null && <Box sx={{ color: 'red' }}>Server is not active</Box>}
             {welcome && !readWelcome && <WelcomePopup closeWelcome={() => dispatch({ type: READ_WELCOME })} />}
         </Box>
     )

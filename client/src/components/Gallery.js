@@ -17,6 +17,7 @@ import { CONFIRM_DELETE, CONFIRM_DELETE_BATCH, IMG2IMG, MIRROR, SEND_TO_IMG2IMG,
 import { setTip } from '../actions';
 import { getImgSubDefaults, img2imgOpts } from '../constants/options';
 import { CopySettingsButt, DeleteButt, NavLabel, NextButt, PrevButt, SendToImgButt, ShowEntireJobButt, ShowFolderButt } from './GalleryButtons';
+import ResizerDrag from './ResizerDrag';
 
 const styles = {
     img: {
@@ -28,9 +29,11 @@ const styles = {
         cursor: 'pointer'
         // maxHeight: '400px'
     },
-    imgLarge: {
-        width: '400px',
-        height: '400px'
+    imgLarge: (sizePx) => {
+        return {
+            width: `${sizePx}px`,
+            height: `${sizePx}px`,
+        }
     },
     selected: {
         boxSizing: 'border-box',
@@ -52,6 +55,11 @@ const Gallery = ({ op, optNames }) => {
     const blankImg = useSelector(state => state.main.blanks.image);
     const [mirroring, setMirroring] = React.useState(false);
     const [showBatch, setShowBatch] = React.useState(false);
+
+    const [sizePx, setSizePx] = React.useState(400);
+    const [resizing, setResizing] = React.useState(false);
+    const containerRef = React.useRef(null);
+    const resizerRef = React.useRef(null);
 
     // have ws request data on init
     React.useEffect(() => {
@@ -142,12 +150,12 @@ const Gallery = ({ op, optNames }) => {
     // several display types:
     // no image (idx -1)
     const renderNoImage = () => {
-        return <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge) }} />
+        return <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }} />
     }
     // render a single image, or one in the batch
     const renderImage = (currentImage, circleSize = 200, selected = false) => {
         return data.imgData[currentImage] ?
-            <img src={data.imgData[currentImage].imgResult} style={{ ...styles.img, ...(!showBatch && styles.imgLarge), ...(selected && styles.selected) }} onClick={() => {
+            <img src={data.imgData[currentImage].imgResult} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)), ...(selected && styles.selected) }} onClick={() => {
                 if (showBatch) {
                     setShowBatch(false);
                     dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx: currentImage } });
@@ -156,7 +164,7 @@ const Gallery = ({ op, optNames }) => {
                 }
             }} /> :
             <Box sx={{ position: 'relative' }}>
-                <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge) }} />
+                <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }} />
                 <CircularProgress sx={{ position: 'absolute', top: `calc(50% - ${circleSize / 2}px)`, left: `calc(50% - ${circleSize / 2}px)` }} size={circleSize} />
             </Box>
     }
@@ -189,13 +197,29 @@ const Gallery = ({ op, optNames }) => {
             {batch}
         </Grid>
     }
+
+    //resize
+    const handleResize = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const tl = containerRef.current.getBoundingClientRect();
+        // console.log('resize type', e.type, 'containerRef loc', containerRef.current.getBoundingClientRect());
+        // console.log('resizerRef loc', resizerRef.current.getBoundingClientRect());
+        const horiz = e.clientX - tl.x;
+        const vert = e.clientY - tl.y;
+        // console.log('horiz', horiz, 'vert', vert)
+        setSizePx(Math.max(horiz, vert));
+    }
+
     return (
-        <Stack spacing={2} alignItems='center'>
-            <Card sx={{ width: '450px', height: '400px', overflow: 'auto' }}>
+        <Stack spacing={2} alignItems='center' onMouseUp={() => setResizing(false)} onMouseMove={(e) => { if (resizing) { handleResize(e) } }}>
+            <Box sx={{ position: 'relative' }}><Card sx={{ width: `${sizePx + 50}px`, height: `${sizePx}px`, overflow: 'auto' }} ref={containerRef}>
                 {data.currentImage <= -1 ? renderNoImage() :
                     (showBatch ? renderBatch() : renderImage(data.currentImage))
                 }
+
             </Card>
+                <ResizerDrag resizerRef={resizerRef} setResizing={setResizing} /></Box>
             <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
                 <DeleteButt ws={ws} data={data} op={op} submitStatus={submitStatus} showBatch={showBatch} />
                 <CopySettingsButt mirroring={mirroring} setMirroring={setMirroring} />

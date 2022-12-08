@@ -29,15 +29,16 @@ const canvasScale = 2;
 const cX = canvasWidth / 2 / canvasScale;
 const cY = canvasHeight / 2 / canvasScale;
 const styles = {
+    outer: { zIndex: 1000, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
     container: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
+        // position: 'absolute',
+        // top: 0,
+        // left: 0,
         border: '4px solid black',
         // width: '2048px',
         // height: '2048px',
         // overflow: 'scroll',
-        zIndex: 100,
+        // zIndex: 100,
         backgroundColor: 'rgba(230,230,230,0.9)',
     },
     options: {
@@ -79,7 +80,7 @@ const ConfigCanvas = ({ cf, setCf, updateAndClose }) => {
     const imgRef = React.useRef(null);
     const [isDrawing, setIsDrawing] = React.useState(false);
     const [loaded, setLoaded] = React.useState(false);
-    const [inpainting, setInpainting] = React.useState(cf.mask !== null);
+    const [inpainting, setInpainting] = React.useState(cf.mask !== null && cf.mask !== undefined);
     const [brushSize, setBrushSize] = React.useState(5);
     const [history, setHistory] = React.useState({
         index: -1,
@@ -248,52 +249,53 @@ const ConfigCanvas = ({ cf, setCf, updateAndClose }) => {
     }
     if (!cf.visible) return null;
     return (
-        <Box sx={styles.container}>
-            <Box sx={styles.canvasContainer}>
-                <canvas
-                    ref={canvasRef}
-                    // onMouseDown={mouseDown}
-                    // onMouseUp={mouseUp}
-                    // onMouseMove={mouseMove}
-                    style={{ border: '3px solid red', ...styles.canvas }}
-                />
-                <canvas
-                    ref={inpaintRef}
-                    onMouseDown={mouseDown}
-                    onMouseUp={mouseUp}
-                    onMouseMove={mouseMove}
-                    style={{ border: '3px solid yellow', ...styles.canvas }}
-                />
-            </Box>
-            {loaded && <Stack direction='column' spacing={1} sx={styles.options}>
-                <Stack direction='row' spacing={2} padding={1}>
-                    <Typography variant='h6'>Configure</Typography>
-                    <Button variant='contained' size='small' onClick={handleClose}>Confirm</Button>
-                    <Button variant='outlined' size='small' onClick={() => setCf({ visible: false })}>Cancel</Button>
-                    <Stack direction='row' spacing={2} alignItems='center'>
-                        <Stack direction='row' spacing={0} alignItems='center'>
+        <Box sx={styles.outer}>
+            <Box sx={styles.container}>
+                <Box sx={styles.canvasContainer}>
+                    <canvas
+                        ref={canvasRef}
+                        // onMouseDown={mouseDown}
+                        // onMouseUp={mouseUp}
+                        // onMouseMove={mouseMove}
+                        style={{ border: '3px solid red', ...styles.canvas }}
+                    />
+                    <canvas
+                        ref={inpaintRef}
+                        onMouseDown={mouseDown}
+                        onMouseUp={mouseUp}
+                        onMouseMove={mouseMove}
+                        style={{ border: '3px solid yellow', ...styles.canvas }}
+                    />
+                </Box>
+                {loaded && <Stack direction='column' spacing={1} sx={styles.options}>
+                    <Stack direction='row' spacing={2} padding={1}>
+                        <Typography variant='h6'>Configure</Typography>
+                        <Button variant='contained' size='small' onClick={handleClose}>Confirm</Button>
+                        <Button variant='outlined' size='small' onClick={() => setCf({ visible: false })}>Cancel</Button>
+                        <Stack direction='row' spacing={2} alignItems='center'>
+                            <Stack direction='row' spacing={0} alignItems='center'>
 
-                            <Typography variant='body2'>Inpainting</Typography>
-                            <Checkbox checked={inpainting} onChange={(e) => setInpainting(e.target.checked)} />
-                        </Stack>
-                        <Stack direction='row' spacing={0} alignItems='center'>
+                                <Typography variant='body2'>Inpainting</Typography>
+                                <Checkbox checked={inpainting} onChange={(e) => setInpainting(e.target.checked)} />
+                            </Stack>
+                            <Stack direction='row' spacing={0} alignItems='center'>
 
-                            <Typography variant='body2'>Outpainting</Typography>
-                            <Checkbox checked={cf.outpaint} onChange={(e) => setCf({ ...cf, outpaint: e.target.checked })} />
+                                <Typography variant='body2'>Outpainting</Typography>
+                                <Checkbox checked={cf.outpaint} onChange={(e) => setCf({ ...cf, outpaint: e.target.checked })} />
+                            </Stack>
                         </Stack>
                     </Stack>
-                </Stack>
-                {inpainting && <Stack direction='row' spacing={2} padding={1}>
-                    <Typography variant='body2' sx={{ flex: '0 0 auto' }}>Brush size: {brushSize}</Typography>
-                    <Slider sx={{ flex: '1 1' }} value={brushSize} onChange={(e, v) => setBrushSize(v)} min={1} max={50} />
-                    <Button disabled={history.index < 0} onClick={undoDraw}><UndoIcon /></Button>
-                    <Button disabled={history.index >= history.lines.length - 1} onClick={redoDraw}><RedoIcon /></Button>
-                </Stack>
-                }
-                <ImageSizer target={cf} setCf={setCf} suffix='_in' fixedHeight={imgRef.current ? imgRef.current.height : 512} fixedWidth={imgRef.current ? imgRef.current.width : 512} />
-                <ImageSizer target={cf} setCf={setCf} suffix='_out' />
-            </Stack>}
-        </Box >
+                    {inpainting && <Stack direction='row' spacing={2} padding={1}>
+                        <Typography variant='body2' sx={{ flex: '0 0 auto' }}>Brush size: {brushSize}</Typography>
+                        <Slider sx={{ flex: '1 1' }} value={brushSize} onChange={(e, v) => setBrushSize(v)} min={1} max={50} />
+                        <Button disabled={history.index < 0} onClick={undoDraw}><UndoIcon /></Button>
+                        <Button disabled={history.index >= history.lines.length - 1} onClick={redoDraw}><RedoIcon /></Button>
+                    </Stack>
+                    }
+                    <ImageSizer target={cf} setCf={setCf} suffix='_in' fixedHeight={imgRef.current ? imgRef.current.height : 512} fixedWidth={imgRef.current ? imgRef.current.width : 512} />
+                    <ImageSizer target={cf} setCf={setCf} suffix='_out' />
+                </Stack>}
+            </Box ></Box>
     )
 }
 
