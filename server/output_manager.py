@@ -4,12 +4,13 @@ import json
 from PIL import Image
 
 output_path = os.path.join(os.path.dirname(__file__), opts.global_opts.outpath)
-ops = ['txt2img', 'img2img']
+ops = ['txt2img', 'img2img', 'editing']
 
 op_opt_keys = {
     # "txt2img": [k for k in opts.txt2img_opts_dict.keys() if k not in ['num_batches']],
     "txt2img": list(opts.txt2img_opts_dict.keys()),
     "img2img": list(opts.img2img_opts_dict.keys()),
+    "editing": list(opts.editing_opts_dict.keys()),
 }
 
 
@@ -24,6 +25,7 @@ def num_with_ext(path, ext):
 
 
 def get_op_path(op):
+    assert op in ops, f"op {op} not in {ops}"
     return os.path.join(output_path, op)
 
 
@@ -62,6 +64,7 @@ def save_img(img, opt, **kwargs):
     idx = num_with_ext(op_path, "png")
     prefix = idx_name(op, idx)
     print('saving new image', idx, prefix)
+    print(os.path.join(op_path, prefix+'.png'))
     img.save(os.path.join(op_path, prefix+'.png'))
     meta = {k: v for k, v in kwargs.items()}
     for k in op_opt_keys[opt.context]:

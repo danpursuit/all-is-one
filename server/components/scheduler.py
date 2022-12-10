@@ -26,20 +26,20 @@ import opts
 
 schedulers = {}
 # schedulers['plms'] = base_pipe.scheduler
-# schedulers['ddim'] = prepare_scheduler(
-#     DDIMScheduler(
-#         beta_start=0.00085,
-#         beta_end=0.012,
-#         beta_schedule="scaled_linear",
-#         clip_sample=False,
-#         set_alpha_to_one=False,
-#     )
-# )
-# schedulers['lms'] = prepare_scheduler(
-#     LMSDiscreteScheduler(
-#         beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear"
-#     )
-# )
+schedulers['ddim'] = prepare_scheduler(
+    DDIMScheduler(
+        beta_start=0.00085,
+        beta_end=0.012,
+        beta_schedule="scaled_linear",
+        clip_sample=False,
+        set_alpha_to_one=False,
+    )
+)
+schedulers['lms'] = prepare_scheduler(
+    LMSDiscreteScheduler(
+        beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear"
+    )
+)
 # schedulers['dpm'] = prepare_scheduler(
 #     DPMSolverMultistepScheduler.from_config(base_pipe.scheduler.config)
 # )
@@ -54,16 +54,17 @@ swaps = {
     'dpm': DPMSolverMultistepScheduler,
     'euler': EulerDiscreteScheduler,
     'euler_ancestral': EulerAncestralDiscreteScheduler,
+    'plms': PNDMScheduler,
 }
 
 
 def swap_scheduler(pipe, opt):
     if opt.scheduler_class in swaps:
-        print('Setting scheduler', opt.scheduler_class)
+        # print('Setting scheduler', opt.scheduler_class)
         pipe.scheduler = swaps[opt.scheduler_class].from_config(
             pipe.scheduler.config)
     else:
-        print('BAD swap', opt.scheduler_class)
+        # print('BAD swap', opt.scheduler_class)
         pipe.scheduler = load_scheduler(opt)
     return pipe
 

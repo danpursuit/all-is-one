@@ -78,7 +78,7 @@ const styles = {
     }
 }
 const defaultValue = null;
-const ImageUpload = ({ name }) => {
+const ImageUpload = ({ name, advanced }) => {
     const dispatch = useDispatch();
     const [sizePx, setSizePx] = React.useState(350);
     const [resizing, setResizing] = React.useState(false);
@@ -300,8 +300,8 @@ const ImageUpload = ({ name }) => {
                 <ResizerDrag resizerRef={resizerRef} setResizing={setResizing} />
             </Box>
             {data && <>
-                <ImageUploadButtons target={data.values[data.idx]} clearImage={clearImage} resetOptions={resetOptions} enableCanvas={enableCanvas} />
-                <ConfigCanvas cf={config} setCf={setConfig} subs={imgSubOpts} updateAndClose={updateSettingsFromConfigure} />
+                <ImageUploadButtons target={data.values[data.idx]} clearImage={clearImage} resetOptions={resetOptions} enableCanvas={enableCanvas} advanced={advanced} />
+                {advanced && <ConfigCanvas cf={config} setCf={setConfig} subs={imgSubOpts} updateAndClose={updateSettingsFromConfigure} />}
             </>}
         </Stack>
     )

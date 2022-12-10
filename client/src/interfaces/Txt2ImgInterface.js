@@ -56,8 +56,8 @@ const Txt2ImgInterface = () => {
           <BatchOptionSlider name={optNames.guidance_scale} label='Prompt Weight' defaultValue={6} min={1} max={20} step={0.5} />
           <BatchOptionSlider name={optNames.num_inference_steps} label='Inference Steps' defaultValue={20} min={1} max={150} step={1} />
           <Stack direction="row" spacing={2} justifyContent="space-evenly">
-            <BatchOptionSlider name={optNames.height} label='Height' defaultValue={512} min={32} max={2048} step={32} />
             <BatchOptionSlider name={optNames.width} label='Width' defaultValue={512} min={32} max={2048} step={32} />
+            <BatchOptionSlider name={optNames.height} label='Height' defaultValue={512} min={32} max={2048} step={32} />
           </Stack>
           <Stack direction="row" spacing={2}>
             <BatchOptionSlider name={optNames.num_batches} label='# Batches' defaultValue={1} min={1} max={16} step={1} useBatch={false} />
@@ -73,8 +73,8 @@ const Txt2ImgInterface = () => {
           <SubmitButt info={info} ws={ws} op={op} options={options} optNames={optNames} submitStatus={submitStatus} />
           <SubmitButt info={info} ws={ws} op={op} options={options} optNames={optNames} submitStatus={submitStatus} isProcedural />
           <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
+            <PromptHelp optNames={optNames} />
             <UndoRedo />
-            <PromptHelp options={options} optNames={optNames} />
           </Stack>
           <Tips />
           <JobProgress submitStatus={submitStatus} />

@@ -52,7 +52,7 @@ const Img2ImgInterface = () => {
     <Grid container spacing={2}>
       <Grid item xs={12} md={6}>
         <Stack spacing={2}>
-          <ImageUpload name={optNames.img} />
+          <ImageUpload name={optNames.img} advanced={true} />
           <BatchOptionTextInput name={optNames.prompt} label='Prompt' multiline rows={4} fullWidth />
           <BatchOptionTextInput name={optNames.negative_prompt} label='Negative Prompt' multiline rows={2} fullWidth />
           <BatchOptionSlider name={optNames.guidance_scale} label='Prompt Weight' defaultValue={6} min={1} max={20} step={0.5} />
@@ -72,8 +72,8 @@ const Img2ImgInterface = () => {
           <BatchOptionTextInput name={optNames.seed} label='Seed' defaultValue={-1} type='number' />
           <BatchOptionSelect name={optNames.scheduler_class} defaultValue={schedulers[0].key} items={schedulers} />
           <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-            <UndoRedo />
             <PromptHelp options={options} optNames={optNames} />
+            <UndoRedo />
           </Stack>
           <Tips />
           <JobProgress submitStatus={submitStatus} />

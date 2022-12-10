@@ -29,6 +29,16 @@ export const img2imgOpts = {
 }
 export const img2imgNames = Object.keys(img2imgOpts);
 
+export const editingOpts = {
+    img: 'editing-img',
+    face_res_pct: 'editing-face-res',
+    do_upscaling: 'editing-do-upscaling',
+    height: 'editing-height',
+    width: 'editing-width',
+    lanczos_mix: 'editing-lanczos-mix',
+}
+export const editingNames = Object.keys(editingOpts);
+
 // values here should not be used right now. they are tied to img2img-img
 export const imgSubOpts = {
     x_in: 'x_in',

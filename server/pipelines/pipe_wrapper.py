@@ -33,6 +33,13 @@ def create_img2img_pipeline(opt):
     return PipeWrapper(opt.regularChoice, opt, pipeline_class=StableDiffusionImg2ImgPipeline)
 
 
+def create_upscaler_pipeline(opt):
+    choice = mf.get_upscaler_choice()
+    assert choice != EMPTY_MODEL
+    print('using upscaler', choice)
+    return PipeWrapper(choice, opt)
+
+
 def create_inpaint_pipeline(opt, old=False):
     if opt.inpaintingChoice == EMPTY_MODEL:
         print('old variant', opt.regularChoice)

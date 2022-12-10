@@ -154,7 +154,13 @@ export default (state = initialState, action) => {
                 history = [...state.history.slice(0, state.historyIndex + 1)]
                 if (history.length > maxHistory) history = history.slice(1);
                 const newStep = { type: action.type, nextState: action.payload, prevState };
-                history.push(newStep);
+                const lastStep = history[history.length - 1];
+                if (lastStep !== undefined && lastStep.type === action.type && action.type) {
+                    newStep.prevState = history[history.length - 1].prevState
+                    history[history.length - 1] = newStep;
+                } else {
+                    history.push(newStep);
+                }
                 return {
                     ...state,
                     history,

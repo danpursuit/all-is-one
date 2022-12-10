@@ -9,8 +9,9 @@ import Txt2ImgInterface from './interfaces/Txt2ImgInterface';
 import Img2ImgInterface from './interfaces/Img2ImgInterface';
 import Navbar from './components/Navbar';
 import { useSelector } from 'react-redux';
-import { IMG2IMG, TXT2IMG, SELECT_MODEL } from './constants/features';
+import { IMG2IMG, TXT2IMG, SELECT_MODEL, EDITING } from './constants/features';
 import SelectModelInterface from './interfaces/SelectModelInterface';
+import EditingInterface from './interfaces/EditingInterface';
 
 function Copyright() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
       <Navbar />
       {location === TXT2IMG && <Txt2ImgInterface />}
       {location === IMG2IMG && <Img2ImgInterface />}
+      {location === EDITING && <EditingInterface />}
       {location === SELECT_MODEL && <SelectModelInterface />}
     </Container>
   );

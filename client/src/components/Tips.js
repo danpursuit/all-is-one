@@ -3,7 +3,7 @@ import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { DELETE_BATCH, DELETE_SINGLE_IMAGE, REDO, SET_BATCH_OPTION, SET_BATCH_OPTIONS, UNDO } from '../constants/actionTypes';
 import { SHOW_FOLDER, CONFIRM_DELETE, CONFIRM_DELETE_BATCH, MIRROR, PROCEDURAL, SEND_TO_IMG2IMG, SHOW_BATCH } from '../constants/features';
-import { txt2imgOpts, img2imgOpts } from '../constants/options';
+import { txt2imgOpts, img2imgOpts, editingOpts } from '../constants/options';
 
 const styles = {
     outer: {
@@ -16,7 +16,7 @@ const styles = {
 
 const descriptions = {
     [SHOW_FOLDER]: ['Show Folder:', 'Open the folder in your file explorer.'],
-    [SEND_TO_IMG2IMG]: ['Send to Image2Image:', 'Send the selected image to Image2Image.'],
+    [SEND_TO_IMG2IMG]: ['Send Image:', 'Send the selected image to the Image2Image or Editing interface.'],
     [DELETE_SINGLE_IMAGE]: ['Delete Image:', 'Click twice to delete the image.'],
     [DELETE_BATCH]: ['Delete Job', 'Click twice to delete the entire job (batch delete).'],
     [CONFIRM_DELETE]: ['CONFIRM DELETE SINGLE:', 'Click Delete to confirm deletion of the single image.'],
@@ -35,11 +35,22 @@ const descriptions = {
     [txt2imgOpts.scheduler_class]: ['Scheduler:', 'The algorithm to use for applying inference at each step. Different schedulers can have different optimal Prompt Weight and Inference Steps. Try using procedural generation to see the effects of different settings!'],
     [img2imgOpts.img]: ['Initial Image:', 'The initial image to use for image generation. Click to upload/remove image, or drag and drop an image. You can also directly drag generated images from the gallery on the right!'],
     [img2imgOpts.strength]: ['Denoising Strength:', 'How far the algorithm can stray from the initial image. Values of 0.3-0.5 are good for making small changes to an image. At higher Denoising Strength, it is recommended to increase Prompt Weight if the algorithm is too random. For non-legacy inpainting, denoising strength is not used.'],
+    [editingOpts.face_res_pct]: ['Face Restoration:', 'Set to 0 to disable. When enabled, GFPGAN face restoration will be applied to the image before upscaling (if enabled), then blended into the original image at the percentage specified (1.0 for full restoration).'],
+    [editingOpts.do_upscaling]: ['Upscaling:', 'When enabled, the image will be upscaled to the resolution specified in Width x Height using ESRGAN.'],
+    [editingOpts.height]: ['Width x Height:', 'The resolution of the output image. Upscaling must be enabled.'],
+    [editingOpts.lanczos_mix]: ['Lanczos Blending:', 'Lanczos Sampling is an older upscaling algorithm that may better match the original image, at the cost of not recognizing "lines", "surfaces", and other details. If the ESRGAN upsampled image is coming out too smooth, adding Lanczos blending in can restore some of the texture.'],
+
 }
 descriptions[txt2imgOpts.width] = descriptions[txt2imgOpts.height];
+descriptions[editingOpts.width] = descriptions[editingOpts.height];
 Object.keys(img2imgOpts).forEach(k => {
     if (txt2imgOpts[k] && !descriptions[img2imgOpts[k]]) {
         descriptions[img2imgOpts[k]] = descriptions[txt2imgOpts[k]];
+    }
+});
+Object.keys(editingOpts).forEach(k => {
+    if (img2imgOpts[k] && !descriptions[editingOpts[k]]) {
+        descriptions[editingOpts[k]] = descriptions[img2imgOpts[k]];
     }
 });
 const getDescription = (name, main) => {
@@ -47,6 +58,9 @@ const getDescription = (name, main) => {
         if (main.historyIndex <= -1) return 'Undo the last action.';
         switch (main.history[main.historyIndex].type) {
             case SET_BATCH_OPTION:
+                if (!descriptions[main.history[main.historyIndex].prevState.name]) {
+                    console.log('need tip', main.history[main.historyIndex].prevState.name);
+                }
                 return 'Undo the last change to ' + descriptions[main.history[main.historyIndex].prevState.name][0].replace(':', '') + '.';
             case SET_BATCH_OPTIONS:
                 return 'Undo the last Copy Settings.';

@@ -1,5 +1,6 @@
 export const IMG2IMG = 'img2img';
 export const TXT2IMG = 'txt2img';
+export const EDITING = 'editing';
 export const SELECT_MODEL = 'select_model';
 
 export const PROCEDURAL = 'PROCEDURAL';

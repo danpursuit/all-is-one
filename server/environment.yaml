@@ -169,3 +169,4 @@ dependencies:
     - zipp==3.11.0
     - zope-event==4.5.0
     - zope-interface==5.5.2
+    - realesrgan==0.3.0

@@ -5,7 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import io from 'socket.io-client';
 import { SET_DOWNLOADING_MODEL, INTERRUPTED, IMG_RESULT, DELETE_SINGLE_IMAGE, DELETE_BATCH, ADD_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, IN_PROGRESS_START, RCV_MODEL_DATA } from './constants/actionTypes';
 import baseURL from './constants/url';
-import { txt2imgNames, txt2imgOpts, img2imgNames, img2imgOpts } from './constants/options';
+import { txt2imgNames, txt2imgOpts, img2imgNames, img2imgOpts, editingOpts, editingNames } from './constants/options';
+import { EDITING, IMG2IMG, TXT2IMG } from './constants/features';
 
 const WebSocketContext = React.createContext(null)
 
@@ -26,15 +27,19 @@ export default ({ children }) => {
             return submitTxt2ImgQuick({ options });
         } else if (op === 'img2img') {
             return submitImg2ImgQuick({ options });
+        } else if (op === EDITING) {
+            return submitEditingQuick({ options });
         } else {
             console.log('unknown op', op);
         }
     }
     const submitProcedural = ({ options, op }) => {
-        if (op === 'txt2img') {
+        if (op === TXT2IMG) {
             return submitTxt2ImgProcedural({ options });
-        } else if (op === 'img2img') {
+        } else if (op === IMG2IMG) {
             return submitImg2ImgProcedural({ options });
+        } else if (op === EDITING) {
+            return submitEditingProcedural({ options });
         } else {
             console.log('unknown op', op);
         }
@@ -59,8 +64,17 @@ export default ({ children }) => {
         img2imgNames.forEach((name, i) => opts[name] = options[img2imgOpts[name]].values);
         socket.emit('img2imgProcedural', { options: opts });
     }
+    const submitEditingQuick = ({ options }) => {
+        const opts = {};
+        editingNames.forEach((name, i) => opts[name] = [options[editingOpts[name]].values[options[editingOpts[name]].idx]]);
+        socket.emit('editingProcedural', { options: opts });
+    }
+    const submitEditingProcedural = ({ options }) => {
+        const opts = {};
+        editingNames.forEach((name, i) => opts[name] = options[editingOpts[name]].values);
+        socket.emit('editingProcedural', { options: opts });
+    }
     const reqImageByIdx = ({ op, idx }) => {
-        console.log('reqImageByIdx', op, idx);
         socket.emit('reqImageByIdx', { op, idx });
     }
     const reqNumImages = ({ op }) => {
@@ -105,6 +119,21 @@ export default ({ children }) => {
     }
     const showFolder = ({ location }) => {
         socket.emit('showFolder', { location });
+    }
+
+    const addImage = ({ img, meta, idx }) => {
+        dispatch({
+            type: ADD_IMAGE,
+            payload: {
+                imgData: {
+                    imgResult: 'data:image/png;base64,' + img,
+                    ...meta
+                },
+                op: meta.context,
+                idx,
+                numImages: idx + 1
+            }
+        })
     }
     if (!socket) {
         console.log('connecting');
@@ -154,6 +183,9 @@ export default ({ children }) => {
                         numImages: idx + 1
                     }
                 })
+            })
+            socket.on("editingResult", ({ img, meta, idx }) => {
+                addImage({ img, meta, idx });
             })
             socket.on('numImages', ({ op, numImages }) => {
                 dispatch({
@@ -205,7 +237,10 @@ export default ({ children }) => {
                     }
                 })
             })
-            socket.on('interrupted', ({ ok }) => {
+            socket.on('interrupted', ({ ok, msg }) => {
+                if (msg) {
+                    alert(msg);
+                }
                 dispatch({
                     type: INTERRUPTED
                 })

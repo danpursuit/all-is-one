@@ -7,7 +7,7 @@ from PIL import Image
 import opts
 import control
 from pipelines.img2img_pipeline import Img2ImgPipeline
-from pipelines.pipe_wrapper import create_img2img_pipeline, create_inpaint_pipeline, create_outpaint_pipeline
+from pipelines.pipe_wrapper import create_img2img_pipeline, create_inpaint_pipeline, create_outpaint_pipeline, create_upscaler_pipeline
 from scripts.utils import bytes_to_pil, fit_image, scale_image, prep_client_mask, merge_masks, prep_outpaint_mask
 from output_manager import save_img
 from constants import EMPTY_MODEL
@@ -61,6 +61,7 @@ def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
     else:
         print('img2img inpainting/outpainting: false')
         pipe = create_img2img_pipeline(opt)
+        # pipe = create_upscaler_pipeline(opt)
         mask = None
 
     generator = torch.Generator('cuda').manual_seed(opt.seed)
@@ -84,6 +85,21 @@ def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
             # callback=step_callback,
             # callback_steps=1,
         )
+        # below is for upscaler (when implemented)
+        # output = pipe(
+        #     prompt=opt.prompt,
+        #     # strength=opt.strength,
+        #     image=init_image,
+        #     # init_image=init_image,
+        #     # mask_image=mask,
+        #     # height=h_out,
+        #     # width=w_out,
+        #     num_inference_steps=opt.num_inference_steps,
+        #     guidance_scale=opt.guidance_scale,
+        #     negative_prompt=opt.negative_prompt,
+        #     num_images_per_prompt=opt.num_images_per_prompt,
+        #     generator=generator,
+        # )
         for idx_in_batch, img in enumerate(output):
             img, meta, idx = save_img(img, opt,
                                       idx_in_cf=idx_in_cf,

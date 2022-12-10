@@ -3,6 +3,8 @@ server/test.png
 server/repositories/
 *.ckpt
 server/local.config
+server/editing_cache/
+server/gfpgan/
 cache/
 server/src/
 server/outputs/

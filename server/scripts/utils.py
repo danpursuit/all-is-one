@@ -1,12 +1,13 @@
-from PIL import Image, ImageOps
 import numpy as np
 import torch
-import PIL.Image
-import PIL.ImageOps
+import PIL
+from PIL import Image, ImageOps
 from packaging import version
 import io
 import base64
 from diffusers.configuration_utils import FrozenDict
+import cv2
+
 from scripts.g_diffuser import get_matched_noise
 
 try:
@@ -16,19 +17,19 @@ except Exception as e:
 
 if version.parse(version.parse(PIL.__version__).base_version) >= version.parse("9.1.0"):
     PIL_INTERPOLATION = {
-        "linear": PIL.Image.Resampling.BILINEAR,
-        "bilinear": PIL.Image.Resampling.BILINEAR,
-        "bicubic": PIL.Image.Resampling.BICUBIC,
-        "lanczos": PIL.Image.Resampling.LANCZOS,
-        "nearest": PIL.Image.Resampling.NEAREST,
+        "linear": Image.Resampling.BILINEAR,
+        "bilinear": Image.Resampling.BILINEAR,
+        "bicubic": Image.Resampling.BICUBIC,
+        "lanczos": Image.Resampling.LANCZOS,
+        "nearest": Image.Resampling.NEAREST,
     }
 else:
     PIL_INTERPOLATION = {
-        "linear": PIL.Image.LINEAR,
-        "bilinear": PIL.Image.BILINEAR,
-        "bicubic": PIL.Image.BICUBIC,
-        "lanczos": PIL.Image.LANCZOS,
-        "nearest": PIL.Image.NEAREST,
+        "linear": Image.LINEAR,
+        "bilinear": Image.BILINEAR,
+        "bicubic": Image.BICUBIC,
+        "lanczos": Image.LANCZOS,
+        "nearest": Image.NEAREST,
     }
 
 
@@ -209,6 +210,22 @@ def bytes_to_pil(image_bytestr, trim=True):
     if trim:
         image_bytestr = image_bytestr.split(';')[1].split(',')[1]
     return Image.open(io.BytesIO(base64.b64decode(image_bytestr)))
+
+
+def bytes_to_cv2(image_bytestr, trim=True):
+    """
+    Convert a byte array to a cv2 image.
+    """
+    if trim:
+        image_bytestr = image_bytestr.split(';')[1].split(',')[1]
+    return cv2.imdecode(np.frombuffer(base64.b64decode(image_bytestr), np.uint8), cv2.IMREAD_COLOR)
+
+
+def cv2_to_pil(cv2_image):
+    """
+    Convert a cv2 image to a PIL image.
+    """
+    return Image.fromarray(cv2.cvtColor(cv2_image, cv2.COLOR_BGR2RGB))
 
 
 def prepare_scheduler(scheduler):

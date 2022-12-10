@@ -1,8 +1,9 @@
-import { Box, FormControlLabel, Radio, RadioGroup, Typography } from "@mui/material";
+import { Box, FormControlLabel, Radio, RadioGroup, Stack, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { SET_LOCATION, READ_WELCOME } from "../constants/actionTypes";
 import { WebSocketContext } from '../WebSocket';
-import { IMG2IMG, TXT2IMG, SELECT_MODEL, EMPTY_MODEL } from "../constants/features";
+import { IMG2IMG, TXT2IMG, EDITING, SELECT_MODEL, EMPTY_MODEL } from "../constants/features";
+import logo from '../images/logo512.png'
 import React, { useEffect } from "react";
 import WelcomePopup from "./WelcomePopup";
 
@@ -23,19 +24,23 @@ const Navbar = ({ }) => {
         ws.reqModelData();
     }, [])
     return (
-        <Box sx={{ marginBottom: 1 }}>
-            <RadioGroup
-                row
-                value={location}
-                onChange={handleChange}
-            >
-                <FormControlLabel value={TXT2IMG} control={<Radio />} label="Text2Image"
-                    disabled={regularChoice === EMPTY_MODEL}
-                />
-                <FormControlLabel value={IMG2IMG} control={<Radio />} label="Image2Image"
-                    disabled={regularChoice === EMPTY_MODEL} />
-                <FormControlLabel value={SELECT_MODEL} control={<Radio />} label="Select Model" disabled={regularModels === null} />
-            </RadioGroup>
+        <Box sx={{ marginBottom: 2 }}>
+            <Stack direction='row' spacing={2} alignItems='center'>
+                <img src={logo} alt='logo' width='50px' height='50px' />
+                <RadioGroup
+                    row
+                    value={location}
+                    onChange={handleChange}
+                >
+                    <FormControlLabel value={TXT2IMG} control={<Radio />} label="Text2Image"
+                        disabled={regularChoice === EMPTY_MODEL}
+                    />
+                    <FormControlLabel value={IMG2IMG} control={<Radio />} label="Image2Image"
+                        disabled={regularChoice === EMPTY_MODEL} />
+                    <FormControlLabel value={EDITING} control={<Radio />} label="Editing" />
+                    <FormControlLabel value={SELECT_MODEL} control={<Radio />} label="Select Model" disabled={regularModels === null} />
+                </RadioGroup>
+            </Stack>
             {regularChoice === EMPTY_MODEL && <Box sx={{ color: 'red' }}>Please select a base model</Box>}
             {regularModels === null && <Box sx={{ color: 'red' }}>Server is not active</Box>}
             {welcome && !readWelcome && <WelcomePopup closeWelcome={() => dispatch({ type: READ_WELCOME })} />}

@@ -12,8 +12,7 @@ import opts
 import control
 from processors.txt2img import process_txt2img
 from processors.img2img import process_img2img
-from processors.inpaint import process_inpaint
-from processors.outpaint import process_outpaint
+from processors.editing import process_editing
 from scripts.utils import pil_to_bytes
 import output_manager as om
 from output_manager import make_output_dir, num_with_ext, get_op_path, load_img, idx_name, delete_image, prefix_str
@@ -81,9 +80,7 @@ def handle_procedural(data, op):
             func = {
                 'txt2img': process_txt2img,
                 'img2img': process_img2img,
-                # 'img2img': process_outpaint,
-                # 'img2img': process_inpaint,
-                # 'inpaint': process_inpaint,
+                'editing': process_editing,
             }[op]
             func(overrides, create_output_callback(op),
                  idx_in_job=idx_in_job,
@@ -94,6 +91,16 @@ def handle_procedural(data, op):
         with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
             options['job_size'] = idx_in_job
             json.dump(options, f)
+    except RuntimeError as error:
+        print('Error', error)
+        print(
+            'If you encounter CUDA out of memory, try reducing the dimensions of your output.')
+        with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
+            options['job_size'] = idx_in_job
+            json.dump(options, f)
+        opts.clear_opts()
+        emit('interrupted', {
+             'ok': True, 'msg': f'Your machine ran out of memory! Try reducing the dimensions of your output. Full error:\n~~~\n{error}\n~~~'})
     except:
         if control.interrupt:
             print('interrupted')
@@ -103,6 +110,7 @@ def handle_procedural(data, op):
         else:
             print('error', sys.exc_info()[0])
             raise
+        opts.clear_opts()
         # todo: edit metadata to indicate that this batch was interrupted
     control.clear_interrupt()
 
@@ -116,6 +124,19 @@ def handle_txt2imgProcedural(data):
 @socketio.on("img2imgProcedural")
 def handle_img2imgProcedural(data):
     op = "img2img"
+    return handle_procedural(data, op)
+
+
+@socketio.on("editingProcedural")
+def handle_editingProcedural(data):
+    for key, default_val in {
+        'num_batches': 1,
+        'num_images_per_prompt': 1,
+        'seed': 1
+    }.items():
+        if key not in data['options']:
+            data['options'][key] = [default_val]
+    op = "editing"
     return handle_procedural(data, op)
 
 
@@ -141,7 +162,7 @@ def req_image_by_idx(data):
 
 @socketio.on('reqBatchMeta')
 def req_batch_meta(data):
-    print('batch meta request', data)
+    # print('batch meta request', data)
     op = data['op']
     job_id = data['jobId']
     batch_name = f'batch_{prefix_str(job_id)}.json'
@@ -276,7 +297,7 @@ def show_folder(data):
         path = mf.cache_path
     elif location == 'ckpt':
         path = mf.ckpt_path
-    elif location == 'txt2img' or location == 'img2img':
+    elif location in om.ops:
         path = get_op_path(location)
     else:
         print('unknown location', location)

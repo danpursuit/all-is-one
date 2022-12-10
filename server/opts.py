@@ -66,10 +66,22 @@ img2img_opts_dict = dict(
     context="img2img",
     scheduler_class='pndm',
 )
+editing_opts_dict = dict(
+    num_batches=1,
+    img=None,
+    context="editing",
+    face_res_pct=0,
+    do_upscaling=False,
+    height=512,
+    width=512,
+    lanczos_mix=0,
+    seed=1,
+)
 
 global_opts = SimpleNamespace(**global_opts_dict)
 txt2img_opts = SimpleNamespace(**txt2img_opts_dict)
 img2img_opts = SimpleNamespace(**img2img_opts_dict)
+editing_opts = SimpleNamespace(**editing_opts_dict)
 
 source = None
 
@@ -92,7 +104,7 @@ def sim_opts(*args):
 def set_opts(*args):
     global source
     if source:
-        raise RuntimeError("opts already set")
+        raise Exception("opts already set")
     source = sim_opts(*args)
     return source
 

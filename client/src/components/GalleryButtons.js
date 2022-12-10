@@ -10,10 +10,11 @@ import SourceIcon from '@mui/icons-material/Source';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import ClearIcon from '@mui/icons-material/Clear';
 import SendIcon from '@mui/icons-material/Send';
+import { NestedDropdown } from './NestedMenu/components/NestedDropdown.tsx';
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 
-import { SHOW_FOLDER, CONFIRM_DELETE, CONFIRM_DELETE_BATCH, IMG2IMG, MIRROR, SEND_TO_IMG2IMG, SHOW_BATCH } from '../constants/features';
+import { SHOW_FOLDER, CONFIRM_DELETE, CONFIRM_DELETE_BATCH, IMG2IMG, MIRROR, SEND_TO_IMG2IMG, SHOW_BATCH, EDITING } from '../constants/features';
 import { WebSocketContext } from '../WebSocket';
 import { SET_CURRENT_IMAGE, SET_BATCH_OPTIONS, DELETE_SINGLE_IMAGE, DELETE_BATCH, SET_BATCH_OPTION, SET_LOCATION } from '../constants/actionTypes';
 import { setTip } from '../actions';
@@ -132,17 +133,45 @@ export const NextButt = (args) => {
 }
 export const SendToImgButt = ({ data }) => {
     const dispatch = useDispatch();
-    const sendImgToImg2Img = (img) => {
-        dispatch({ type: SET_LOCATION, payload: { location: IMG2IMG, preset: img } });
+    const sendImgToImg = (location) => {
+        if (!data || !data.imgData[data.currentImage] || !data.imgData[data.currentImage].imgResult)
+            return;
+        dispatch({ type: SET_LOCATION, payload: { location, preset: data.imgData[data.currentImage].imgResult } });
     }
-    return (<Tooltip title="Send to Img2Img">
-        <span>
-            <IconButton disabled={!data?.imgData[data.currentImage]?.imgResult} onClick={() => sendImgToImg2Img(data.imgData[data.currentImage].imgResult)}
-                onMouseEnter={() => dispatch(setTip(SEND_TO_IMG2IMG))}>
-                <SendIcon />
-            </IconButton>
-        </span>
-    </Tooltip>)
+    const menuItemsData = {
+        label: '',
+        items: [
+            {
+                label: 'Send to Img2Img',
+                callback: () => sendImgToImg(IMG2IMG)
+            },
+            {
+                label: 'Send to Editing',
+                callback: () => sendImgToImg(EDITING)
+            }
+        ]
+    }
+    // return (<Tooltip title="Send to Img2Img">
+    //     <span>
+    //         <IconButton disabled={!data?.imgData[data.currentImage]?.imgResult} onClick={() => sendImgToImg2Img(data.imgData[data.currentImage].imgResult)}
+    //             onMouseEnter={() => dispatch(setTip(SEND_TO_IMG2IMG))}>
+    //             <SendIcon />
+    //         </IconButton>
+    //     </span>
+    // </Tooltip>)
+    return (
+        <NestedDropdown
+            menuItemsData={menuItemsData}
+            MenuProps={{ elevation: 3 }}
+            ButtonProps={{
+                disabled: !data?.imgData[data.currentImage]?.imgResult,
+                onMouseEnter: () => dispatch(setTip(SEND_TO_IMG2IMG))
+            }}
+            // onClick={() => setComputeItems(true)}
+            closeCallback={() => null}
+            useIcon
+        />
+    )
 }
 export const ShowFolderButt = ({ op, ws }) => {
     const dispatch = useDispatch();

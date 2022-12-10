@@ -1,10 +1,20 @@
-# all-is-one (alpha)
-AI1 is an all-inclusive user interface for AI image generation with procedural experiment capabilities. A project that I am committed to in my spare time. Open source under the Apache 2.0 license.
+# all-is-one (beta)
+AI1 is an all-inclusive user interface for AI image generation with procedural experiment capabilities. The user interface is intuitive to understand for beginners while also providing advanced features. Open source under the Apache 2.0 license.
+- to update your environment, if it exists already: conda env update --name ai1 --file environment.yaml --prune
 
 ## Standard Features
 - txt2img
 - img2img
-- work in progress, will be adding standard features such as face restoration, inpainting, upscaling, as well as newer features such as eDiffi's segmentation maps
+- inpainting, with mask editor
+    - support for legacy inpainting without a fine-tuned model
+    - support for fine-tuned SD 1.5/2.x inpainting models
+- outpainting, with SD 2.x inpainting model
+- editing tab with extra features:
+    - Face restoration
+    - Image Upscaling
+- model manager
+    - download models within the UI
+    - convert .ckpt files within the UI
 
 ## Features
 - Procedural Submit allows you to send variations of any parameter/multiple parameters and see what all the generations would look like in a single batch
@@ -38,6 +48,7 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 - cd all-is-one/server
     - for now, server/ is the working folder (sorry)
 - conda env create -n ai1 --file environment.yaml
+    - to update your environment, if it exists already: conda env update --name ai1 --file environment.yaml --prune
 - conda activate ai1
 - get token from https://huggingface.co/settings/tokens
 - create .env file in the server/ folder with "HF_TOKEN=[your_token]"
