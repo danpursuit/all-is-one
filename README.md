@@ -2,7 +2,12 @@
 AI1 is an all-inclusive user interface for AI image generation with procedural experiment capabilities. The user interface is intuitive to understand for beginners while also providing advanced features. Open source under the Apache 2.0 license.
 - to update your environment, if it exists already: conda env update --name ai1 --file environment.yaml --prune
 
-## Standard Features
+1. [Standard Features](#standard)
+1. [Full Features](#features)
+1. [Installation](#installation)
+
+
+## Standard Features<a name="standard"></a>
 - txt2img
 - img2img
 - inpainting, with mask editor
@@ -16,7 +21,7 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
     - download models within the UI
     - convert .ckpt files within the UI
 
-## Features
+## Features<a name="features"></a>
 - Procedural Submit allows you to send variations of any parameter/multiple parameters and see what all the generations would look like in a single batch
 <img src="sample/d1_circled.jpg" alt="sample1" title="sample1" width="600" height="375" />
 
@@ -44,17 +49,20 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 - Tips and Prompt Help buttons to assist new users
 
 
-## Installation:
-- cd all-is-one/server
+## Installation<a name="installation"></a>:
+- ```cd all-is-one/server```
     - for now, server/ is the working folder (sorry)
-- conda env create -n ai1 --file environment.yaml
-    - to update your environment, if it exists already: conda env update --name ai1 --file environment.yaml --prune
-- conda activate ai1
+- ```conda env create -n ai1 --file environment.yaml```
+    - if you get a permission denied error, delete environment with ```conda env remove -n ai1``` and try again. Second time should work!
+    - to update your environment, if it exists already: ```conda env update --name ai1 --file environment.yaml --prune```
+- ```conda activate ai1```
 - get token from https://huggingface.co/settings/tokens
-- create .env file in the server/ folder with "HF_TOKEN=[your_token]"
+- create .env file in the server/ folder with ```HF_TOKEN=[your_token]```
 - ~~python setup.py~~ (no longer needed, go to Select Model in the UI to download/convert models)
-- python server.py
+- ```python server.py```
     - leave this running in the background
 - go to http://localhost:5050/
     - Done!
     - The first run will take you to the "Select Model" tab, where you can download models from HuggingFace or convert .ckpt files
+
+
