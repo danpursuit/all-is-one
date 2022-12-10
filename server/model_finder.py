@@ -108,12 +108,12 @@ downloads = [
         repo_id="stabilityai/stable-diffusion-2-inpainting",
         description='stabilityai/stable-diffusion-2-inpainting: Stable Diffusion v2 model trained for inpainting and outpainting.',
     ),
-    ModelDownload(
-        name='SD2 - Upscaler',
-        save_name='sd2-upscaler',
-        repo_id="stabilityai/stable-diffusion-x4-upscaler",
-        description='Model specifically for upscaling. Download in order to use the upscaler.',
-    ),
+    # ModelDownload(
+    #     name='SD2 - Upscaler',
+    #     save_name='sd2-upscaler',
+    #     repo_id="stabilityai/stable-diffusion-x4-upscaler",
+    #     description='Model specifically for upscaling. Download in order to use the upscaler.',
+    # ),
 ]
 
 
