@@ -1,5 +1,7 @@
 # all-is-one (beta)
 AI1 is an all-inclusive user interface for AI image generation with procedural experiment capabilities. The user interface is intuitive to understand for beginners while also providing advanced features. Open source under the Apache 2.0 license.
+
+Mac version is working in testing. Will be released soon!
 - to update your environment, if it exists already: conda env update --name ai1 --file environment.yaml --prune
 
 1. [Standard Features](#standard)
@@ -53,7 +55,6 @@ AI1 is an all-inclusive user interface for AI image generation with procedural e
 - ```cd all-is-one/server```
     - for now, server/ is the working folder (sorry)
 - ```conda env create -n ai1 --file environment.yaml```
-    - if you get a permission denied error, delete environment with ```conda env remove -n ai1``` and try again. Second time should work!
     - to update your environment, if it exists already: ```conda env update --name ai1 --file environment.yaml --prune```
 - ```conda activate ai1```
 - get token from https://huggingface.co/settings/tokens
