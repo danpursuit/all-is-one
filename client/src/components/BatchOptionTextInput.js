@@ -12,7 +12,14 @@ const BatchOptionTextInput = ({ name, defaultValue = '', useBatch = true, ...arg
     useEffect(() => { dispatch({ type: INIT_BATCH_OPTION, payload: { name, values: [defaultValue], idx: 0 } }); })
     const data = useSelector(state => state.main.options[name]);
     const handleOptChange = (e) => {
-        const val = args.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+        let val = e.target.value;
+        if (args.type === 'number') {
+            if (val.toString() === '') {
+                val = -1;
+            } else {
+                val = parseFloat(val);
+            }
+        }
         dispatch({ type: SET_BATCH_OPTION, payload: { ...data, values: data.values.map((v, i) => i === data.idx ? val : v) } })
     }
     return (
