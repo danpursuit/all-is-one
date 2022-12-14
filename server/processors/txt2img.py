@@ -5,7 +5,6 @@ from pytorch_lightning import seed_everything
 
 import opts
 import control
-from pipelines.txt2img_pipeline import Txt2ImgPipeline
 from pipelines.pipe_wrapper import create_txt2img_pipeline
 from output_manager import save_img
 
@@ -13,10 +12,9 @@ from output_manager import save_img
 def process_txt2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0, job_size=0):
     opt = opts.set_opts(opts.global_opts, opts.txt2img_opts, overrides)
 
-    # pipe = Txt2ImgPipeline.create_pipeline(opt).to('cuda')
     pipe = create_txt2img_pipeline(opt)
 
-    generator = torch.Generator('cuda').manual_seed(opt.seed)
+    generator = torch.Generator(opt.device).manual_seed(opt.seed)
     idx_in_cf = 0
     for n in trange(opt.num_batches, desc="Batches"):
         if control.interrupt:

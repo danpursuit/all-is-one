@@ -6,7 +6,6 @@ from PIL import Image
 
 import opts
 import control
-from pipelines.img2img_pipeline import Img2ImgPipeline
 from pipelines.pipe_wrapper import create_img2img_pipeline, create_inpaint_pipeline, create_outpaint_pipeline, create_upscaler_pipeline
 from scripts.utils import bytes_to_pil, fit_image, scale_image, prep_client_mask, merge_masks, prep_outpaint_mask
 from output_manager import save_img
@@ -64,7 +63,7 @@ def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
         # pipe = create_upscaler_pipeline(opt)
         mask = None
 
-    generator = torch.Generator('cuda').manual_seed(opt.seed)
+    generator = torch.Generator(opt.device).manual_seed(opt.seed)
     idx_in_cf = 0
     for n in trange(opt.num_batches, desc="Batches"):
         if control.interrupt:
