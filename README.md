@@ -12,6 +12,7 @@ Mac version is working in testing. Will be released soon!
 ## Standard Features<a name="standard"></a>
 - txt2img
 - img2img
+- img2video (new)
 - inpainting, with mask editor
     - support for legacy inpainting without a fine-tuned model
     - support for fine-tuned SD 1.5/2.x inpainting models
