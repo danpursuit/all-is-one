@@ -53,7 +53,7 @@ const Txt2ImgInterface = () => {
         <Stack spacing={2}>
           <BatchOptionTextInput name={optNames.prompt} label='Prompt' multiline rows={4} fullWidth />
           <BatchOptionTextInput name={optNames.negative_prompt} label='Negative Prompt' multiline rows={2} fullWidth />
-          <BatchOptionSlider name={optNames.guidance_scale} label='Prompt Weight' defaultValue={6} min={1} max={20} step={0.5} />
+          <BatchOptionSlider name={optNames.guidance_scale} label='Prompt Weight' defaultValue={8} min={1} max={20} step={0.5} />
           <BatchOptionSlider name={optNames.num_inference_steps} label='Inference Steps' defaultValue={20} min={1} max={150} step={1} />
           <Stack direction="row" spacing={2} justifyContent="space-evenly">
             <BatchOptionSlider name={optNames.width} label='Width' defaultValue={512} min={32} max={2048} step={32} />

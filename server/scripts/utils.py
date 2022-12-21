@@ -122,10 +122,6 @@ def merge_masks(m1: Image, m2: Image):
             merged_data.append((0, 0, 0))
     merged = Image.new(m1.mode, m1.size)
     merged.putdata(merged_data)
-    print(f'm1 colors: {m1c}')
-    print(f'm2 colors: {m2c}')
-    # m1 colors: {(0, 0, 0, 255): 260633, (255, 255, 255, 255): 132583}
-    # m2 colors: {(255, 255, 255): 144384, (0, 0, 0): 248832}
     return merged
 
 
@@ -191,6 +187,28 @@ def preprocess(image):
     image = image[None].transpose(0, 3, 1, 2)
     image = torch.from_numpy(image)
     return 2.0 * image - 1.0
+
+
+def pil_to_tensor(image):
+    """
+    Convert a PIL image to a torch tensor.
+    """
+    image = np.array(image).astype(np.float32) / 255.0
+    image = image[None].transpose(0, 3, 1, 2)
+    image = torch.from_numpy(image)
+    return 2.0 * image - 1.0
+
+
+def tensor_to_pil(image):
+    """
+    Convert a torch tensor to a PIL image.
+    """
+    image = (image + 1.0) / 2.0
+    image = image.clamp(0, 1)
+    image = image.permute(0, 2, 3, 1).cpu().numpy()
+    image = (image * 255).round().astype("uint8")
+    image = Image.fromarray(image[0])
+    return image
 
 
 def pil_to_bytes(pil_image):

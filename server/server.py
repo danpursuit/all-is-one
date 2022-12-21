@@ -7,11 +7,13 @@ from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import itertools
 import eventlet
+import PIL
 
 import opts
 import control
 from processors.txt2img import process_txt2img
 from processors.img2img import process_img2img
+from processors.img2vid import process_img2vid
 from processors.editing import process_editing
 from scripts.utils import pil_to_bytes
 import output_manager as om
@@ -41,21 +43,31 @@ def handle_ping(data):
 
 
 def create_output_callback(op):
-    def output_callback(img, meta, idx):
-        img_bytes = pil_to_bytes(img)
-        emit(f'{op}Result', {"img": img_bytes, "meta": meta, "idx": idx})
-        eventlet.sleep(0)
+    if om.is_video(op):
+        def output_callback(img, meta, idx):
+            pass
+    else:
+        def output_callback(img, meta, idx):
+            img_bytes = pil_to_bytes(img)
+            emit(f'{op}Result', {"img": img_bytes, "meta": meta, "idx": idx})
+            eventlet.sleep(0)
     return output_callback
 
 
 def handle_procedural(data, op):
+    options = opts.fix_client_options(data['options'])
+    is_video = om.is_video(op)
+    start_idx = om.get_start_idx(op)
+    if is_video:
+        # write the video metadata
+        om.save_img2vid_data(op, options)
+        # then fix options
+        options = opts.fix_client_options_video(data['options'])
     print(f'got {op}Procedural', {i: j for i, j in dict(
         data['options']).items() if i != 'img'})
-    options = opts.fix_client_seed(data['options'])
     keys = list(options.keys())
     job_size = 0
     cf_sizes = {}
-    start_idx = num_with_ext(get_op_path(op), "png")
     for idx, x in enumerate(itertools.product(*[options[k] for k in keys])):
         # todo: make this more efficient
         overrides = dict(zip(keys, x))
@@ -63,12 +75,15 @@ def handle_procedural(data, op):
             opts, op+"_opts"), overrides)
         job_size += opt.num_batches * opt.num_images_per_prompt
         cf_sizes[idx] = opt.num_batches * opt.num_images_per_prompt
-    with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
-        options['job_size'] = job_size
-        json.dump(options, f)
-    emit('jobStarted', {op: op, 'expectedCount': job_size})
+    if not is_video:
+        # write img metadata before job starts
+        with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
+            options['job_size'] = job_size
+            json.dump(options, f)
+    emit('jobStarted', {'op': op, 'expectedCount': job_size})
     eventlet.sleep(0.01)
     idx_in_job = 0
+    fail_msg = None
     try:
         for idx, x in enumerate(itertools.product(*[options[k] for k in keys])):
             if control.interrupt:
@@ -80,6 +95,7 @@ def handle_procedural(data, op):
             func = {
                 'txt2img': process_txt2img,
                 'img2img': process_img2img,
+                'img2vid': process_img2vid,
                 'editing': process_editing,
             }[op]
             func(overrides, create_output_callback(op),
@@ -88,30 +104,39 @@ def handle_procedural(data, op):
                  job_size=job_size,
                  )
             idx_in_job += cf_sizes[idx]
-        with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
-            options['job_size'] = idx_in_job
-            json.dump(options, f)
-    except RuntimeError as error:
-        print('Error', error)
-        print(
-            'If you encounter CUDA out of memory, try reducing the dimensions of your output.')
-        with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
-            options['job_size'] = idx_in_job
-            json.dump(options, f)
-        opts.clear_opts()
-        emit('interrupted', {
-             'ok': True, 'msg': f'Your machine ran out of memory! Try reducing the dimensions of your output. Full error:\n~~~\n{error}\n~~~'})
-    except:
-        if control.interrupt:
-            print('interrupted')
+        if not is_video:
             with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
                 options['job_size'] = idx_in_job
                 json.dump(options, f)
         else:
+            mov, meta, idx = om.load_vid(start_idx, op)
+            emit(f'{op}Result', {"img": mov, "meta": meta, "idx": idx})
+    except PIL.UnidentifiedImageError as error:
+        print('Error', error)
+        fail_msg = f'Unknown image file type. Full error:\n~~~\n{error}\n~~~'
+    except RuntimeError as error:
+        fail_msg = f'Your machine ran out of memory! Try reducing the dimensions of your output. Full error:\n~~~\n{error}\n~~~'
+        print('Error', error)
+        print('If you encounter CUDA out of memory, try reducing the dimensions of your output.')
+    except:
+        if control.interrupt:
+            print('interrupted')
+            if not is_video:
+                with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
+                    options['job_size'] = idx_in_job
+                    json.dump(options, f)
+        else:
             print('error', sys.exc_info()[0])
             raise
         opts.clear_opts()
-        # todo: edit metadata to indicate that this batch was interrupted
+
+    if fail_msg is not None:
+        if not is_video:
+            with open(os.path.join(get_op_path(op), 'batch_'+idx_name(op, start_idx, 'json')), 'w') as f:
+                options['job_size'] = idx_in_job
+                json.dump(options, f)
+        opts.clear_opts()
+        emit('interrupted', {'ok': True, 'msg': fail_msg})
     control.clear_interrupt()
 
 
@@ -124,6 +149,12 @@ def handle_txt2imgProcedural(data):
 @socketio.on("img2imgProcedural")
 def handle_img2imgProcedural(data):
     op = "img2img"
+    return handle_procedural(data, op)
+
+
+@socketio.on("img2vidProcedural")
+def handle_img2vidProcedural(data):
+    op = "img2vid"
     return handle_procedural(data, op)
 
 
@@ -143,7 +174,7 @@ def handle_editingProcedural(data):
 @socketio.on('reqNumImages')
 def count_images(data):
     op = data['op']
-    count = num_with_ext(get_op_path(op), "png")
+    count = om.get_start_idx(op)
     emit('numImages', {'op': op, 'numImages': count})
 
 
@@ -151,13 +182,21 @@ def count_images(data):
 def req_image_by_idx(data):
     op = data['op']
     idx = data['idx']
-    try:
-        img, meta, idx = load_img(idx, op)
-    except FileNotFoundError:
-        print('failed to load image')
-        return
-    emit('imageByIdx', {'op': op, 'img': pil_to_bytes(
-        img), 'meta': meta, 'idx': idx})
+    if om.is_video(op):
+        try:
+            mov, meta, idx = om.load_vid(idx, op)
+        except FileNotFoundError:
+            print('failed to load vid')
+            return
+        emit('imageByIdx', {'op': op, 'img': mov, 'meta': meta, 'idx': idx})
+    else:
+        try:
+            img, meta, idx = load_img(idx, op)
+        except FileNotFoundError:
+            print('failed to load image')
+            return
+        emit('imageByIdx', {'op': op, 'img': pil_to_bytes(
+            img), 'meta': meta, 'idx': idx})
 
 
 @socketio.on('reqBatchMeta')
@@ -220,7 +259,7 @@ def handle_delete_batch(data):
     except FileNotFoundError:
         pass
     print('deleted batch', op, job_id)
-    count = num_with_ext(get_op_path(op), "png")
+    count = om.get_start_idx(op)
     emit('deletedBatch', {'op': op, 'idx': idx -
          meta['job_size'], 'jobId': job_id, 'numImages': count})
 

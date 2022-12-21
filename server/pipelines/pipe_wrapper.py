@@ -42,7 +42,7 @@ def create_upscaler_pipeline(opt):
 
 def create_inpaint_pipeline(opt, old=False):
     if opt.inpaintingChoice == EMPTY_MODEL:
-        print('old variant', opt.regularChoice)
+        print('legacy inpainting with', opt.regularChoice)
         im_pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
             mf.get_model_path(opt.regularChoice), torch_dtype=torch.float16, local_files_only=True)
         new_pipe = StableDiffusionInpaintPipelineLegacy(
@@ -55,10 +55,10 @@ def create_inpaint_pipeline(opt, old=False):
             feature_extractor=im_pipe.feature_extractor
         )
         return PipeWrapper(opt.regularChoice, opt, pipe=new_pipe)
-    print('new inpainting variant')
+    print('new inpainting variant with', opt.inpaintingChoice)
     return PipeWrapper(opt.inpaintingChoice, opt, pipeline_class=DiffusionPipeline)
 
 
 def create_outpaint_pipeline(opt):
-    print('outpainting:', opt.outpaintingChoice)
+    print('outpainting with', opt.outpaintingChoice)
     return PipeWrapper(opt.outpaintingChoice, opt, pipeline_class=DiffusionPipeline)

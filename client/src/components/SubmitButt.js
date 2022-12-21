@@ -15,9 +15,11 @@ const InterruptButt = ({ ws, op }) => {
     > Cancel</Button>
 }
 
-const SubmitButt = ({ info, ws, op, options, optNames, submitStatus, isProcedural = false, noPrompt = false }) => {
+const SubmitButt = ({ info, ws, op, options, optNames, submitStatus, isProcedural = false, noPrompt = false, keyframes = false }) => {
     const dispatch = useDispatch();
-    const cannotSubmit = () => { return submitStatus.submitting || !(options && (noPrompt || (options[optNames.prompt] && options[optNames.prompt].values[0]))) }
+    const cannotSubmit = () => {
+        return submitStatus.submitting || !(options && (noPrompt || (keyframes && options[optNames.prompt_kf] && options[optNames.prompt_kf].values[0].value) || (!keyframes && options[optNames.prompt] && options[optNames.prompt].values[0])))
+    }
     const localSubmit = () => {
         dispatch({ type: SUBMIT_START, payload: { op } });
     }

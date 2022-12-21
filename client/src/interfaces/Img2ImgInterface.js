@@ -52,11 +52,11 @@ const Img2ImgInterface = () => {
     <Grid container spacing={2}>
       <Grid item xs={12} md={6}>
         <Stack spacing={2}>
-          <ImageUpload name={optNames.img} advanced={true} />
+          <ImageUpload name={optNames.img} advanced={true} op={op} />
           <BatchOptionTextInput name={optNames.prompt} label='Prompt' multiline rows={4} fullWidth />
           <BatchOptionTextInput name={optNames.negative_prompt} label='Negative Prompt' multiline rows={2} fullWidth />
-          <BatchOptionSlider name={optNames.guidance_scale} label='Prompt Weight' defaultValue={6} min={1} max={20} step={0.5} />
-          <BatchOptionSlider name={optNames.strength} label='Denoising Strength' defaultValue={0.4} min={0.1} max={1.0} step={0.01} />
+          <BatchOptionSlider name={optNames.guidance_scale} label='Prompt Weight' defaultValue={8} min={1} max={20} step={0.5} />
+          <BatchOptionSlider name={optNames.strength} label='Denoising Strength' defaultValue={0.45} min={0.1} max={1.0} step={0.01} />
           <BatchOptionSlider name={optNames.num_inference_steps} label='Inference Steps' defaultValue={20} min={1} max={150} step={1} />
         </Stack>
       </Grid>

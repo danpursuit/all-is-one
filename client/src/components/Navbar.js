@@ -2,7 +2,7 @@ import { Box, FormControlLabel, Radio, RadioGroup, Stack, Typography } from "@mu
 import { useDispatch, useSelector } from "react-redux";
 import { SET_LOCATION, READ_WELCOME } from "../constants/actionTypes";
 import { WebSocketContext } from '../WebSocket';
-import { IMG2IMG, TXT2IMG, EDITING, SELECT_MODEL, EMPTY_MODEL } from "../constants/features";
+import { IMG2IMG, TXT2IMG, EDITING, SELECT_MODEL, EMPTY_MODEL, IMG2VID, TIPS_AND_TRICKS } from "../constants/features";
 import logo from '../images/logo512.png'
 import React, { useEffect } from "react";
 import WelcomePopup from "./WelcomePopup";
@@ -37,8 +37,11 @@ const Navbar = ({ }) => {
                     />
                     <FormControlLabel value={IMG2IMG} control={<Radio />} label="Image2Image"
                         disabled={regularChoice === EMPTY_MODEL} />
+                    <FormControlLabel value={IMG2VID} control={<Radio />} label="Image2Video"
+                        disabled={regularChoice === EMPTY_MODEL} />
                     <FormControlLabel value={EDITING} control={<Radio />} label="Editing" />
                     <FormControlLabel value={SELECT_MODEL} control={<Radio />} label="Select Model" disabled={regularModels === null} />
+                    <FormControlLabel value={TIPS_AND_TRICKS} control={<Radio />} label="FAQ" />
                 </RadioGroup>
             </Stack>
             {regularChoice === EMPTY_MODEL && <Box sx={{ color: 'red' }}>Please select a base model</Box>}

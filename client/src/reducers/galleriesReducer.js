@@ -1,8 +1,8 @@
 import React from "react";
 import { ADD_IMAGE, SET_CURRENT_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, DELETE_SINGLE_IMAGE, DELETE_BATCH } from "../constants/actionTypes";
-import { EDITING, IMG2IMG, TXT2IMG } from "../constants/features";
+import { EDITING, IMG2IMG, IMG2VID, TXT2IMG } from "../constants/features";
 
-const ops = [TXT2IMG, IMG2IMG, EDITING]
+const ops = [TXT2IMG, IMG2IMG, IMG2VID, EDITING]
 const galleryTemplate = {
     op: '',
     imgData: {}, // key by idx

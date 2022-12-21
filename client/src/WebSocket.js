@@ -5,8 +5,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import io from 'socket.io-client';
 import { SET_DOWNLOADING_MODEL, INTERRUPTED, IMG_RESULT, DELETE_SINGLE_IMAGE, DELETE_BATCH, ADD_IMAGE, RCV_NUM_IMAGES, RCV_BATCH_META, IN_PROGRESS_START, RCV_MODEL_DATA } from './constants/actionTypes';
 import baseURL from './constants/url';
-import { txt2imgNames, txt2imgOpts, img2imgNames, img2imgOpts, editingOpts, editingNames } from './constants/options';
-import { EDITING, IMG2IMG, TXT2IMG } from './constants/features';
+import { txt2imgNames, txt2imgOpts, img2imgNames, img2imgOpts, editingOpts, editingNames, img2vidNames, img2vidOpts } from './constants/options';
+import { EDITING, IMG2IMG, IMG2VID, TXT2IMG } from './constants/features';
 
 const WebSocketContext = React.createContext(null)
 
@@ -27,6 +27,8 @@ export default ({ children }) => {
             return submitTxt2ImgQuick({ options });
         } else if (op === 'img2img') {
             return submitImg2ImgQuick({ options });
+        } else if (op === IMG2VID) {
+            return submitImg2VidQuick({ options });
         } else if (op === EDITING) {
             return submitEditingQuick({ options });
         } else {
@@ -38,6 +40,8 @@ export default ({ children }) => {
             return submitTxt2ImgProcedural({ options });
         } else if (op === IMG2IMG) {
             return submitImg2ImgProcedural({ options });
+        } else if (op === IMG2VID) {
+            return submitImg2VidProcedural({ options });
         } else if (op === EDITING) {
             return submitEditingProcedural({ options });
         } else {
@@ -63,6 +67,16 @@ export default ({ children }) => {
         const opts = {};
         img2imgNames.forEach((name, i) => opts[name] = options[img2imgOpts[name]].values);
         socket.emit('img2imgProcedural', { options: opts });
+    }
+    const submitImg2VidQuick = ({ options }) => {
+        const opts = {};
+        img2vidNames.forEach((name, i) => opts[name] = options[img2vidOpts[name]].values);
+        socket.emit('img2vidProcedural', { options: opts });
+    }
+    const submitImg2VidProcedural = ({ options }) => {
+        const opts = {};
+        img2vidNames.forEach((name, i) => opts[name] = options[img2vidOpts[name]].values);
+        socket.emit('img2vidProcedural', { options: opts });
     }
     const submitEditingQuick = ({ options }) => {
         const opts = {};
@@ -170,6 +184,21 @@ export default ({ children }) => {
                     }
                 })
             })
+            socket.on("img2vidResult", ({ img, meta, idx }) => {
+                const imgResult = URL.createObjectURL(new Blob([img], { type: 'video/mp4' }))
+                dispatch({
+                    type: ADD_IMAGE,
+                    payload: {
+                        imgData: {
+                            imgResult,
+                            ...meta
+                        },
+                        op: IMG2VID,
+                        idx,
+                        numImages: idx + 1
+                    }
+                })
+            })
             socket.on("txt2imgResult", ({ img, meta, idx }) => {
                 dispatch({
                     type: ADD_IMAGE,
@@ -197,11 +226,14 @@ export default ({ children }) => {
                 })
             })
             socket.on('imageByIdx', ({ op, meta, img, idx }) => {
+                const imgResult = op === 'img2vid' ?
+                    URL.createObjectURL(new Blob([img], { type: 'video/mp4' })) :
+                    'data:image/jpeg;base64,' + img;
                 dispatch({
                     type: ADD_IMAGE,
                     payload: {
                         imgData: {
-                            imgResult: 'data:image/png;base64,' + img,
+                            imgResult,
                             ...meta
                         },
                         op,

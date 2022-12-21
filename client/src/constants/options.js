@@ -29,6 +29,30 @@ export const img2imgOpts = {
 }
 export const img2imgNames = Object.keys(img2imgOpts);
 
+export const img2vidOpts = {
+    num_frames: 'img2vid-num-frames',
+    frame_rate: 'img2vid-frame-rate',
+    interp_spline: 'img2vid-interp-spline',
+    img: 'img2vid-img',
+
+    prompt_kf: 'img2vid-prompt-kf',
+    negative_prompt_kf: 'img2vid-prompt-neg-kf',
+    guidance_scale_kf: 'img2vid-prompt-weight-kf',
+    strength_kf: 'img2vid-strength-kf',
+    num_inference_steps_kf: 'img2vid-inference-steps-kf',
+    noise_kf: 'img2vid-noise-kf',
+
+    angle_kf: 'img2vid-angle-kf',
+    zoom_kf: 'img2vid-zoom-kf',
+    tx_kf: 'img2vid-tx-kf',
+    ty_kf: 'img2vid-ty-kf',
+
+    seed_behavior: 'img2vid-seed-behavior',
+    seed: 'img2vid-seed',
+    scheduler_class: 'img2vid-scheduler',
+}
+export const img2vidNames = Object.keys(img2vidOpts);
+
 export const editingOpts = {
     img: 'editing-img',
     face_res_pct: 'editing-face-res',

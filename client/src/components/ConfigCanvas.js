@@ -19,6 +19,7 @@ import Gallery from '../components/Gallery';
 import Tips from '../components/Tips';
 import { setTip } from '../actions';
 import ImageSizer from './ImageSizer';
+import { IMG2IMG } from '../constants/features';
 
 // contains the canvas for sizing the input and output
 // inpainting will happen on the canvas later
@@ -31,14 +32,7 @@ const cY = canvasHeight / 2 / canvasScale;
 const styles = {
     outer: { zIndex: 1000, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
     container: {
-        // position: 'absolute',
-        // top: 0,
-        // left: 0,
         border: '4px solid black',
-        // width: '2048px',
-        // height: '2048px',
-        // overflow: 'scroll',
-        // zIndex: 100,
         backgroundColor: 'rgba(230,230,230,0.9)',
     },
     options: {
@@ -72,7 +66,7 @@ const initCanvas = (canvas) => {
 //     lines: []
 // }
 let currentLine = null;
-const ConfigCanvas = ({ cf, setCf, updateAndClose }) => {
+const ConfigCanvas = ({ cf, setCf, updateAndClose, op }) => {
     const canvasRef = React.useRef(null);
     const ctxRef = React.useRef(null);
     const inpaintRef = React.useRef(null);
@@ -272,7 +266,7 @@ const ConfigCanvas = ({ cf, setCf, updateAndClose }) => {
                         <Typography variant='h6'>Configure</Typography>
                         <Button variant='contained' size='small' onClick={handleClose}>Confirm</Button>
                         <Button variant='outlined' size='small' onClick={() => setCf({ visible: false })}>Cancel</Button>
-                        <Stack direction='row' spacing={2} alignItems='center'>
+                        {op === IMG2IMG && <Stack direction='row' spacing={2} alignItems='center'>
                             <Stack direction='row' spacing={0} alignItems='center'>
 
                                 <Typography variant='body2'>Inpainting</Typography>
@@ -283,7 +277,7 @@ const ConfigCanvas = ({ cf, setCf, updateAndClose }) => {
                                 <Typography variant='body2'>Outpainting</Typography>
                                 <Checkbox checked={cf.outpaint} onChange={(e) => setCf({ ...cf, outpaint: e.target.checked })} />
                             </Stack>
-                        </Stack>
+                        </Stack>}
                     </Stack>
                     {inpainting && <Stack direction='row' spacing={2} padding={1}>
                         <Typography variant='body2' sx={{ flex: '0 0 auto' }}>Brush size: {brushSize}</Typography>

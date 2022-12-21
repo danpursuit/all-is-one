@@ -78,7 +78,7 @@ const styles = {
     }
 }
 const defaultValue = null;
-const ImageUpload = ({ name, advanced }) => {
+const ImageUpload = ({ name, advanced, op, useBatch = true, editing = true }) => {
     const dispatch = useDispatch();
     const [sizePx, setSizePx] = React.useState(350);
     const [resizing, setResizing] = React.useState(false);
@@ -294,14 +294,14 @@ const ImageUpload = ({ name, advanced }) => {
                         </label>
                         {dragActive && <div style={styles.dragScreen} onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div>}
                     </form>
-                    {(hovered || data.values.length > 1) && <BatchOptions data={data} defaultValue={defaultValue} />}
+                    {useBatch && (hovered || data.values.length > 1) && <BatchOptions data={data} defaultValue={defaultValue} />}
                 </>}
                 {/* <Box sx={styles.resizer} ref={resizerRef} onDragEnter={handleResize} onDragLeave={handleResize} onDragOver={handleResize} onDrop={handleResize} draggable /> */}
                 <ResizerDrag resizerRef={resizerRef} setResizing={setResizing} />
             </Box>
             {data && <>
-                <ImageUploadButtons target={data.values[data.idx]} clearImage={clearImage} resetOptions={resetOptions} enableCanvas={enableCanvas} advanced={advanced} />
-                {advanced && <ConfigCanvas cf={config} setCf={setConfig} subs={imgSubOpts} updateAndClose={updateSettingsFromConfigure} />}
+                <ImageUploadButtons target={data.values[data.idx]} clearImage={clearImage} resetOptions={resetOptions} enableCanvas={enableCanvas} advanced={advanced} editing={editing} />
+                {advanced && <ConfigCanvas cf={config} setCf={setConfig} subs={imgSubOpts} updateAndClose={updateSettingsFromConfigure} op={op} />}
             </>}
         </Stack>
     )

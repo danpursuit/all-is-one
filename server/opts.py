@@ -66,6 +66,26 @@ img2img_opts_dict = dict(
     context="img2img",
     scheduler_class='pndm',
 )
+img2vid_opts_dict = dict(
+    prompt_kf={0: 'a goldfish'},
+    negative_prompt_kf={0: ''},
+    guidance_scale_kf={0: 8.},
+    strength_kf={0: 0.75},
+    num_inference_steps_kf={0: 30},
+    noise_kf={0: 0.02},
+    angle_kf={0: 0.},
+    zoom_kf={0: 1.},
+    tx_kf={0: 0.},
+    ty_kf={0: 0.},
+    seed_behavior='fixed',
+    seed=42,
+    num_frames=30,
+    frame_rate=30,
+    num_batches=1,
+    num_images_per_prompt=1,
+    wrap_border=False,
+    context="img2vid",
+)
 editing_opts_dict = dict(
     num_batches=1,
     img=None,
@@ -81,6 +101,7 @@ editing_opts_dict = dict(
 global_opts = SimpleNamespace(**global_opts_dict)
 txt2img_opts = SimpleNamespace(**txt2img_opts_dict)
 img2img_opts = SimpleNamespace(**img2img_opts_dict)
+img2vid_opts = SimpleNamespace(**img2vid_opts_dict)
 editing_opts = SimpleNamespace(**editing_opts_dict)
 
 source = None
@@ -109,11 +130,18 @@ def set_opts(*args):
     return source
 
 
-def fix_client_seed(options):
+def fix_client_options(options):
     options['seed'] = [int(s) for s in options['seed']]
     if len(options['seed']) == 1 and options['seed'][0] == -1:
         options['seed'][0] = random.randint(0, 2**32)
         print('fixed random seed to', options['seed'])
+    return options
+
+
+def fix_client_options_video(options):
+    for key, val in options.items():
+        if key.endswith('_kf'):
+            options[key] = [{int(v['frame']): v['value'] for v in val}]
     return options
 
 

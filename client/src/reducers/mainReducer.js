@@ -1,5 +1,5 @@
 import { READ_WELCOME, SET_DOWNLOADING_MODEL, RCV_MODEL_DATA, IMG_UPLOAD, IMG_RESULT, ADD_IMAGE, INIT_BATCH_OPTION, SET_BATCH_OPTION, SET_BATCH_OPTIONS, UNDO, REDO, SUBMIT_START, IN_PROGRESS_START, INTERRUPTED, SET_LOCATION, SET_MODEL } from "../constants/actionTypes";
-import { EMPTY_MODEL, IMG2IMG, SELECT_MODEL, TXT2IMG } from "../constants/features";
+import { EMPTY_MODEL, IMG2IMG, IMG2VID, SELECT_MODEL, TXT2IMG } from "../constants/features";
 // import blank.png
 import blank from "../images/blank.png";
 
@@ -41,7 +41,7 @@ const initialState = {
         ...initialSubmitStatus
     },
     preset: null,
-    location: TXT2IMG,
+    location: IMG2VID,
     welcome: false,
     readWelcome: false
 }

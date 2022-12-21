@@ -41,27 +41,31 @@ def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
         outpaint_mask = None
 
     # create final mask
+    extra_args = {}
+    # extra_args = dict(
+    #     mask_image=mask,)
+    # height=h_out,
+    # width=w_out,
     if inpaint_mask:
         inpaint_mask = prep_client_mask(inpaint_mask)
         old = opt.inpaintingChoice == EMPTY_MODEL
         print('img2img inpainting:', 'legacy' if old else 'fine-tuned')
         if outpaint_mask:
             print('img2img also outpainting')
-            mask = merge_masks(inpaint_mask, outpaint_mask)
+            extra_args['mask_image'] = merge_masks(inpaint_mask, outpaint_mask)
             pipe = create_outpaint_pipeline(opt)
         else:
             print('inpainting only')
-            mask = inpaint_mask
+            extra_args['mask_image'] = inpaint_mask
             pipe = create_inpaint_pipeline(opt, old=old)
     elif outpaint_mask:
         print('img2img outpainting only')
-        mask = outpaint_mask
+        extra_args['mask_image'] = outpaint_mask
         pipe = create_outpaint_pipeline(opt)
     else:
         print('img2img inpainting/outpainting: false')
         pipe = create_img2img_pipeline(opt)
-        # pipe = create_upscaler_pipeline(opt)
-        mask = None
+        extra_args['strength'] = opt.strength
 
     generator = torch.Generator(opt.device).manual_seed(opt.seed)
     idx_in_cf = 0
@@ -70,17 +74,13 @@ def process_img2img(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
             break
         output = pipe(
             prompt=opt.prompt,
-            strength=opt.strength,
             image=init_image,
-            init_image=init_image,
-            mask_image=mask,
-            height=h_out,
-            width=w_out,
             num_inference_steps=opt.num_inference_steps,
             guidance_scale=opt.guidance_scale,
             negative_prompt=opt.negative_prompt,
             num_images_per_prompt=opt.num_images_per_prompt,
             generator=generator,
+            **extra_args,
             # callback=step_callback,
             # callback_steps=1,
         )

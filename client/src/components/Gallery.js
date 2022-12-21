@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { WebSocketContext } from '../WebSocket';
 import { SET_CURRENT_IMAGE, SET_BATCH_OPTIONS, DELETE_SINGLE_IMAGE, DELETE_BATCH, SET_BATCH_OPTION, SET_LOCATION } from '../constants/actionTypes';
-import { CONFIRM_DELETE, CONFIRM_DELETE_BATCH, IMG2IMG, MIRROR, SEND_TO_IMG2IMG, SHOW_BATCH } from '../constants/features';
+import { CONFIRM_DELETE, CONFIRM_DELETE_BATCH, GALLERY_DISPLAY, GALLERY_NAVIGATION, IMG2IMG, IMG2VID, MIRROR, SEND_TO_IMG2IMG, SHOW_BATCH } from '../constants/features';
 import { setTip } from '../actions';
 import { getImgSubDefaults, img2imgOpts } from '../constants/options';
 import { CopySettingsButt, DeleteButt, NavLabel, NextButt, PrevButt, SendToImgButt, ShowEntireJobButt, ShowFolderButt } from './GalleryButtons';
@@ -46,13 +46,14 @@ const styles = {
         backgroundColor: 'red'
     }
 }
-const Gallery = ({ op, optNames }) => {
+const Gallery = ({ op, optNames, isVideo = false }) => {
     const ws = React.useContext(WebSocketContext);
     const dispatch = useDispatch();
     const options = useSelector(state => state.main.options);
     const data = useSelector(state => state.galleries.galleries[op]);
     const submitStatus = useSelector(state => state.main.submitStatus);
     const blankImg = useSelector(state => state.main.blanks.image);
+    // mirroring means the options used to generate gallery image are being copied to workstation
     const [mirroring, setMirroring] = React.useState(false);
     const [showBatch, setShowBatch] = React.useState(false);
 
@@ -74,25 +75,14 @@ const Gallery = ({ op, optNames }) => {
             ws.reqImageByIdx({ op, idx: data.currentImage });
             return;
         }
+        // if showing entire job, request batch metadata also
         if (showBatch) {
             const jobId = imgData['job_id']
             if (!data.batchMeta[jobId]) {
+                console.log('requesting batch meta', jobId)
                 ws.reqBatchMeta({ op, jobId });
                 return;
             }
-            // request all images in batch that don't exist
-            // disabled now, since server should automatically send all images in batch
-            // const startIdx = data.batchMeta[jobId].start_idx;
-            // const endIdx = data.batchMeta[jobId].end_idx;
-            // let requested = false;
-            // for (let i = startIdx; i < endIdx; i++) {
-            //     if (i === data.currentImage) continue;
-            //     if (data.imgData[i] === undefined) {
-            //         ws.reqImageByIdx({ op, idx: i });
-            //         requested = true;
-            //     }
-            // }
-            // if (requested) return;
             if (mirroring) {
                 const optData = data.batchMeta[jobId]
                 const options = {};
@@ -115,11 +105,12 @@ const Gallery = ({ op, optNames }) => {
                     if (optNames[k]) { // some keys in imgData are not true options
                         options[optNames[k]] = {
                             name: optNames[k],
-                            values: [imgData[k]],
+                            values: isVideo ? imgData[k] : [imgData[k]],
                             idx: 0
                         }
                     }
                 })
+                console.log('from gallery', options)
                 dispatch({ type: SET_BATCH_OPTIONS, payload: { options } });
             }
         }
@@ -153,16 +144,34 @@ const Gallery = ({ op, optNames }) => {
         return <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }} />
     }
     // render a single image, or one in the batch
+    // const renderImage = (currentImage, circleSize = 200, selected = false) => {
+    //     return data.imgData[currentImage] ?
+    //         <img src={data.imgData[currentImage].imgResult} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)), ...(selected && styles.selected) }} onClick={() => {
+    //             if (showBatch) {
+    //                 setShowBatch(false);
+    //                 dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx: currentImage } });
+    //             } else {
+    //                 setShowBatch(true);
+    //             }
+    //         }} /> :
+    //         <Box sx={{ position: 'relative' }}>
+    //             <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }} />
+    //             <CircularProgress sx={{ position: 'absolute', top: `calc(50% - ${circleSize / 2}px)`, left: `calc(50% - ${circleSize / 2}px)` }} size={circleSize} />
+    //         </Box>
+    // }
     const renderImage = (currentImage, circleSize = 200, selected = false) => {
         return data.imgData[currentImage] ?
-            <img src={data.imgData[currentImage].imgResult} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)), ...(selected && styles.selected) }} onClick={() => {
-                if (showBatch) {
-                    setShowBatch(false);
-                    dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx: currentImage } });
-                } else {
-                    setShowBatch(true);
-                }
-            }} /> :
+            (isVideo ?
+                <video src={data.imgData[currentImage].imgResult} controls style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }}>
+                    <source src={data.imgData[currentImage].imgResult} type="video/mp4" /></video> :
+                <img src={data.imgData[currentImage].imgResult} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)), ...(selected && styles.selected) }} onClick={() => {
+                    if (showBatch) {
+                        setShowBatch(false);
+                        dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx: currentImage } });
+                    } else {
+                        setShowBatch(true);
+                    }
+                }} />) :
             <Box sx={{ position: 'relative' }}>
                 <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }} />
                 <CircularProgress sx={{ position: 'absolute', top: `calc(50% - ${circleSize / 2}px)`, left: `calc(50% - ${circleSize / 2}px)` }} size={circleSize} />
@@ -211,9 +220,13 @@ const Gallery = ({ op, optNames }) => {
         setSizePx(Math.max(horiz, vert));
     }
 
+    const galleryNavTip = () => {
+        dispatch(setTip(GALLERY_NAVIGATION))
+    }
+
     return (
         <Stack spacing={2} alignItems='center' onMouseUp={() => setResizing(false)} onMouseMove={(e) => { if (resizing) { handleResize(e) } }}>
-            <Box sx={{ position: 'relative' }}><Card sx={{ width: `${sizePx + 50}px`, height: `${sizePx}px`, overflow: 'auto' }} ref={containerRef}>
+            <Box sx={{ position: 'relative' }}><Card sx={{ width: `${sizePx + 50}px`, height: `${sizePx}px`, overflow: 'auto' }} ref={containerRef} onMouseEnter={() => dispatch(setTip(GALLERY_DISPLAY))}>
                 {data.currentImage <= -1 ? renderNoImage() :
                     (showBatch ? renderBatch() : renderImage(data.currentImage))
                 }
@@ -223,10 +236,10 @@ const Gallery = ({ op, optNames }) => {
             <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
                 <DeleteButt ws={ws} data={data} op={op} submitStatus={submitStatus} showBatch={showBatch} />
                 <CopySettingsButt mirroring={mirroring} setMirroring={setMirroring} />
-                <PrevButt disabled={data.numImages <= 0} onClick={prevImage} />
-                <NavLabel data={data} op={op} />
-                <NextButt disabled={data.numImages <= 0} onClick={nextImage} />
-                <ShowEntireJobButt showBatch={showBatch} setShowBatch={setShowBatch} />
+                <PrevButt disabled={data.numImages <= 0} onClick={prevImage} onMouseEnter={galleryNavTip} />
+                <NavLabel data={data} op={op} onMouseEnter={galleryNavTip} />
+                <NextButt disabled={data.numImages <= 0} onClick={nextImage} onMouseEnter={galleryNavTip} />
+                {!isVideo && <ShowEntireJobButt showBatch={showBatch} setShowBatch={setShowBatch} />}
                 <ShowFolderButt ws={ws} op={op} />
                 <SendToImgButt data={data} />
             </Stack>

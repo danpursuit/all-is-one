@@ -5,7 +5,7 @@ import { INIT_BATCH_OPTION, SET_BATCH_OPTION } from '../constants/actionTypes';
 import { setTip } from '../actions';
 import BatchOptions from './BatchOptions';
 
-const BatchOptionTextInput = ({ name, defaultValue = '', useBatch = true, ...args }) => {
+const BatchOptionTextInput = ({ name, defaultValue = '', useBatch = true, containerSx = null, ...args }) => {
     const dispatch = useDispatch();
     const [hovered, setHovered] = React.useState(false);
     // on startup, dispatch to initialize values
@@ -23,7 +23,7 @@ const BatchOptionTextInput = ({ name, defaultValue = '', useBatch = true, ...arg
         dispatch({ type: SET_BATCH_OPTION, payload: { ...data, values: data.values.map((v, i) => i === data.idx ? val : v) } })
     }
     return (
-        <Box sx={{ display: 'inline-block', position: 'relative' }} onMouseEnter={() => { dispatch(setTip(name)); setHovered(true) }}
+        <Box sx={{ display: 'inline-block', position: 'relative', ...containerSx }} onMouseEnter={() => { dispatch(setTip(name)); setHovered(true) }}
             onMouseLeave={() => setHovered(false)}>
             {data && <>
                 <TextField value={data.values[data.idx]} onChange={handleOptChange} {...args} />
