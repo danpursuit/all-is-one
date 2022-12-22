@@ -11,14 +11,14 @@ class PipeWrapper:
         if pipe is None:
             pipe = pipeline_class.from_pretrained(
                 mf.get_model_path(model_name),
-                torch_dtype=torch.float16,
+                torch_dtype=opt.dtype,
                 local_files_only=True,
             )
         swap_scheduler(pipe, opt)
         pipe.safety_checker = lambda images, **kwargs: (images, False)
         pipe.run_safety_checker = lambda images, * \
             args, **kwargs: (images, False)
-        self.pipe = pipe.to('cuda')
+        self.pipe = pipe.to(opt.device)
 
     def __call__(self, *args, **kwds):
         output = self.pipe(*args, **kwds)
@@ -44,7 +44,7 @@ def create_inpaint_pipeline(opt, old=False):
     if opt.inpaintingChoice == EMPTY_MODEL:
         print('legacy inpainting with', opt.regularChoice)
         im_pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-            mf.get_model_path(opt.regularChoice), torch_dtype=torch.float16, local_files_only=True)
+            mf.get_model_path(opt.regularChoice), torch_dtype=opt.dtype, local_files_only=True)
         new_pipe = StableDiffusionInpaintPipelineLegacy(
             vae=im_pipe.vae,
             text_encoder=im_pipe.text_encoder,

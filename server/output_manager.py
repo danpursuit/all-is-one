@@ -22,7 +22,7 @@ def is_video(op):
 
 def get_start_idx(op):
     if is_video(op):
-        return len(os.listdir(get_op_path(op)))
+        return num_video(get_op_path(op))
     else:
         return num_with_ext(get_op_path(op), "png")
 
@@ -35,6 +35,10 @@ def make_output_dir():
 
 def num_with_ext(path, ext):
     return len([f for f in os.listdir(path) if f.endswith(ext)])
+
+
+def num_video(path):
+    return len([f for f in os.listdir(path) if f.startswith('vid_')])
 
 
 def get_op_path(op):
@@ -99,7 +103,7 @@ def save_img2vid_data(op, meta):
     folder_id = len(os.listdir(get_op_path(op)))
     folder_path = get_folder_path(op, folder_id)
     os.makedirs(folder_path, exist_ok=True)
-    fname = f'{prefix_str(folder_id)}.json'
+    fname = f'video.json'
     with open(os.path.join(folder_path, fname), "w") as f:
         json.dump(meta, f)
 
@@ -119,7 +123,7 @@ def create_video(opt, folder_id):
     op = opt.context
     assert op == 'img2vid'
     folder_path = get_folder_path(op, folder_id)
-    cmd = f'ffmpeg -y -vcodec png -r {opt.frame_rate} -i {folder_path}/%05d.png -c:v libx264 -vf fps={opt.frame_rate} -pix_fmt yuv420p -crf 17 -preset veryfast {folder_path}/video.mp4'
+    cmd = f'ffmpeg -y -vcodec png -r {opt.frame_rate} -i "{folder_path}/%05d.png" -c:v libx264 -vf fps={opt.frame_rate} -pix_fmt yuv420p -crf 17 -preset veryfast "{folder_path}/video.mp4"'
     print('video command:', cmd)
     process = subprocess.Popen(
         cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -149,11 +153,16 @@ def load_vid(idx, op):
     folder_path = get_folder_path(op, idx)
     name = prefix_str(idx)
     print('loading vid', idx, folder_path, name)
-    with open(os.path.join(folder_path, name + '.json'), "r") as f:
+    with open(os.path.join(folder_path, 'video' + '.json'), "r") as f:
         meta = json.load(f)
     with open(os.path.join(folder_path, 'video'+'.mp4'), "rb") as f:
         mov = f.read()
     return mov, meta, idx
+
+
+def delete_video(idx, op):
+    assert is_video(op)
+    raise NotImplementedError
 
 
 def delete_image(idx, op):

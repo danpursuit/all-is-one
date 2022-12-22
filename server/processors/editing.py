@@ -3,6 +3,7 @@ from realesrgan import RealESRGANer
 from basicsr.archs.rrdbnet_arch import RRDBNet
 from basicsr.utils.download_util import load_file_from_url
 from PIL import Image
+import torch
 
 import opts
 import control
@@ -31,7 +32,7 @@ def process_editing(overrides=None, callback=None, idx_in_job=0, cf_idx_in_job=0
         tile=0,  # can try 32+
         tile_pad=10,
         pre_pad=0,
-        half=True,
+        half=(opt.dtype == torch.float16),
         gpu_id=None)
 
     if opt.face_res_pct > 0:

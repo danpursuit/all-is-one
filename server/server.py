@@ -191,7 +191,7 @@ def req_image_by_idx(data):
         emit('imageByIdx', {'op': op, 'img': mov, 'meta': meta, 'idx': idx})
     else:
         try:
-            img, meta, idx = load_img(idx, op)
+            img, meta, idx = om.load_img(idx, op)
         except FileNotFoundError:
             print('failed to load image')
             return
@@ -268,19 +268,23 @@ def handle_delete_batch(data):
 def handle_delete_single_image(data):
     op = data['op']
     idx = data['idx']
-    job_id, job_meta = delete_image(idx, op)
+    job_id, job_meta = om.delete_image(idx, op)
     print('deleted image', op, idx)
     emit('deletedSingleImage', {'op': op, 'idx': idx})
-    if (job_meta['job_size'] > 0):
+    if not om.is_video(op) and (job_meta['job_size'] > 0):
         req_batch_meta({'op': op, 'jobId': job_id})
     count_images({'op': op})
     try:
-        img, meta, idx = load_img(idx, op)
+        if om.is_video(op):
+            mov, meta, idx = om.load_vid(idx, op)
+            img = mov
+        else:
+            img, meta, idx = load_img(idx, op)
+            img = pil_to_bytes(img)
     except FileNotFoundError:
         print('no extra image to load after deletion')
         return
-    emit('imageByIdx', {'op': op, 'img': pil_to_bytes(
-        img), 'meta': meta, 'idx': idx})
+    emit('imageByIdx', {'op': op, 'img': img, 'meta': meta, 'idx': idx})
 
 
 @socketio.on('reqModelData')

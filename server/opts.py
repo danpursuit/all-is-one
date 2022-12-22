@@ -21,12 +21,13 @@ with open(cf_path, "r") as f:
     defaults = json.load(f)
 global_opts_dict = dict(defaults)
 global_opts_dict.update(dict(
-    dtype=torch.float16,
+    dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
     device=torch.device(
         "cuda") if torch.cuda.is_available() else torch.device("cpu"),
     context="global",
     outpath="outputs",
 ))
+print('Pytorch device:', global_opts_dict['device'])
 # print('global_opts_dict', global_opts_dict)
 
 

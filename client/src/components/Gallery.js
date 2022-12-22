@@ -234,14 +234,14 @@ const Gallery = ({ op, optNames, isVideo = false }) => {
             </Card>
                 <ResizerDrag resizerRef={resizerRef} setResizing={setResizing} /></Box>
             <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-                <DeleteButt ws={ws} data={data} op={op} submitStatus={submitStatus} showBatch={showBatch} />
+                {!isVideo && <DeleteButt ws={ws} data={data} op={op} submitStatus={submitStatus} showBatch={showBatch} />}
                 <CopySettingsButt mirroring={mirroring} setMirroring={setMirroring} />
                 <PrevButt disabled={data.numImages <= 0} onClick={prevImage} onMouseEnter={galleryNavTip} />
                 <NavLabel data={data} op={op} onMouseEnter={galleryNavTip} />
                 <NextButt disabled={data.numImages <= 0} onClick={nextImage} onMouseEnter={galleryNavTip} />
                 {!isVideo && <ShowEntireJobButt showBatch={showBatch} setShowBatch={setShowBatch} />}
                 <ShowFolderButt ws={ws} op={op} />
-                <SendToImgButt data={data} />
+                {!isVideo && <SendToImgButt data={data} />}
             </Stack>
         </Stack >
     )
