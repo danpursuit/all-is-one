@@ -1,6 +1,7 @@
 name: ai1
 channels:
   - pytorch
+  - conda-forge
   - defaults
 dependencies:
   - blas=1.0=mkl
@@ -12,6 +13,7 @@ dependencies:
   - cryptography=38.0.1=py38h21b164f_0
   - cudatoolkit=11.3.1=h59b6b97_2
   - freetype=2.12.1=ha860e81_0
+  - ffmpeg=4.3.1
   - git=2.34.1=haa95532_0
   - icc_rt=2022.1.0=h6049295_2
   - idna=3.4=py38haa95532_0

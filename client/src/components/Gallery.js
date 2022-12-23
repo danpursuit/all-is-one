@@ -79,7 +79,7 @@ const Gallery = ({ op, optNames, isVideo = false }) => {
         if (showBatch) {
             const jobId = imgData['job_id']
             if (!data.batchMeta[jobId]) {
-                console.log('requesting batch meta', jobId)
+                // console.log('requesting batch meta', jobId)
                 ws.reqBatchMeta({ op, jobId });
                 return;
             }
@@ -110,7 +110,7 @@ const Gallery = ({ op, optNames, isVideo = false }) => {
                         }
                     }
                 })
-                console.log('from gallery', options)
+                // console.log('from gallery', options)
                 dispatch({ type: SET_BATCH_OPTIONS, payload: { options } });
             }
         }
@@ -143,22 +143,6 @@ const Gallery = ({ op, optNames, isVideo = false }) => {
     const renderNoImage = () => {
         return <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }} />
     }
-    // render a single image, or one in the batch
-    // const renderImage = (currentImage, circleSize = 200, selected = false) => {
-    //     return data.imgData[currentImage] ?
-    //         <img src={data.imgData[currentImage].imgResult} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)), ...(selected && styles.selected) }} onClick={() => {
-    //             if (showBatch) {
-    //                 setShowBatch(false);
-    //                 dispatch({ type: SET_CURRENT_IMAGE, payload: { op, idx: currentImage } });
-    //             } else {
-    //                 setShowBatch(true);
-    //             }
-    //         }} /> :
-    //         <Box sx={{ position: 'relative' }}>
-    //             <img src={blankImg} style={{ ...styles.img, ...(!showBatch && styles.imgLarge(sizePx)) }} />
-    //             <CircularProgress sx={{ position: 'absolute', top: `calc(50% - ${circleSize / 2}px)`, left: `calc(50% - ${circleSize / 2}px)` }} size={circleSize} />
-    //         </Box>
-    // }
     const renderImage = (currentImage, circleSize = 200, selected = false) => {
         return data.imgData[currentImage] ?
             (isVideo ?
@@ -234,7 +218,7 @@ const Gallery = ({ op, optNames, isVideo = false }) => {
             </Card>
                 <ResizerDrag resizerRef={resizerRef} setResizing={setResizing} /></Box>
             <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-                {!isVideo && <DeleteButt ws={ws} data={data} op={op} submitStatus={submitStatus} showBatch={showBatch} />}
+                <DeleteButt ws={ws} data={data} op={op} submitStatus={submitStatus} showBatch={showBatch} />
                 <CopySettingsButt mirroring={mirroring} setMirroring={setMirroring} />
                 <PrevButt disabled={data.numImages <= 0} onClick={prevImage} onMouseEnter={galleryNavTip} />
                 <NavLabel data={data} op={op} onMouseEnter={galleryNavTip} />
